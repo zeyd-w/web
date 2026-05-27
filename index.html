@@ -491,15 +491,63 @@
 
     /* ─── Mobile Layout ───────────────────────────────────── */
     @media (max-width: 700px) {
-      #toolbar { flex-wrap: wrap; height: auto; padding: 8px 10px; gap: 7px; }
+      :root { --toolbar-h: auto; }
+
+      /* Toolbar: two tidy rows */
+      #toolbar {
+        flex-wrap: wrap;
+        height: auto;
+        padding: 8px 10px;
+        gap: 6px;
+        align-items: center;
+      }
+      .logo { font-size: .9rem; }
+      .toolbar-sep { display: none; }
+
+      /* Challenge select fills its row */
+      #challengeSelect {
+        flex: 1 1 140px;
+        max-width: 100%;
+        font-size: .8rem;
+      }
+
+      /* Compact buttons */
+      .btn { height: 28px; padding: 0 11px; font-size: .78rem; }
+      #errorBadge { font-size: .68rem; padding: 2px 6px; }
+
+      /* Stack editor above preview */
       #splitRow { flex-direction: column; }
-      #editorPane { width: 100% !important; min-height: 240px; height: 40vh; border-right: none; border-bottom: 1px solid var(--border); }
-      #resizer { display: none; }
-      #previewPane { flex: 1 1 0; }
-      #challengePanel { height: auto; max-height: 300px; }
+      #resizer  { display: none; }
+
+      /* Editor takes up a good chunk of screen — tall enough to type */
+      #editorPane {
+        width: 100% !important;
+        flex: none;
+        height: 52vh;
+        min-height: 200px;
+        border-right: none;
+        border-bottom: 1px solid var(--border);
+      }
+
+      /* CodeMirror fills the editor pane */
+      .editor-wrap.active { height: 100%; }
+      .CodeMirror { font-size: 13px !important; }
+
+      /* Preview takes remaining space */
+      #previewPane { flex: 1 1 0; min-height: 160px; }
+
+      /* Challenge panel */
+      #challengePanel  { height: auto; max-height: 280px; }
       .challenge-hints { width: 100%; border-left: none; border-top: 1px solid var(--border); }
-      .challenge-body { flex-direction: column; }
-      #errorPanel { max-width: calc(100vw - 20px); right: 10px; }
+      .challenge-body  { flex-direction: column; }
+
+      #errorPanel { max-width: calc(100vw - 20px); right: 10px; bottom: 8px; }
+    }
+
+    /* Very small phones */
+    @media (max-width: 400px) {
+      #editorPane { height: 48vh; }
+      .btn { height: 26px; padding: 0 9px; font-size: .74rem; }
     }
   </style>
 </head>
@@ -1431,11 +1479,19 @@ loadChallenge('blank', true);
   const sr = document.getElementById('splitRow');
   const vr = document.getElementById('vResizer');
   const cp = document.getElementById('challengePanel');
-  // Already ordered correctly in HTML; just ensure it
   ws.appendChild(sr);
   ws.appendChild(vr);
   ws.appendChild(cp);
 })();
+
+// On mobile, CodeMirror needs a refresh after the browser finishes its layout pass
+// (especially after font loading and flex sizing settle)
+if (window.innerWidth <= 700) {
+  [50, 200, 500].forEach(ms => setTimeout(refreshEditors, ms));
+}
+window.addEventListener('orientationchange', () => {
+  setTimeout(refreshEditors, 300);
+});
 </script>
 </body>
 </html>
