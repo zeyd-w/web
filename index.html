@@ -19,6 +19,12 @@
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/addon/lint/lint.min.css" />
   <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/addon/comment/comment.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/addon/selection/active-line.min.js"></script>
+  <!-- Autocomplete -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/addon/hint/show-hint.min.css" />
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/addon/hint/show-hint.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/addon/hint/css-hint.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/addon/hint/xml-hint.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/addon/hint/html-hint.min.js"></script>
   <!-- CSS Lint for error checking -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/csslint/1.0.5/csslint.min.js"></script>
 
@@ -482,6 +488,29 @@
     }
     .err-error { background: #f38ba820; color: var(--error); }
     .err-warning { background: #f9e2af20; color: var(--warn); }
+
+    /* ─── Autocomplete Dropdown ──────────────────────────── */
+    .CodeMirror-hints {
+      background: #1e1e2e !important;
+      border: 1px solid #45475a !important;
+      border-radius: 8px !important;
+      box-shadow: 0 8px 32px #000a !important;
+      padding: 4px !important;
+      font-family: 'Cascadia Code','Fira Code','JetBrains Mono',Consolas,monospace !important;
+      font-size: 13px !important;
+      z-index: 9999 !important;
+      max-height: 220px !important;
+    }
+    .CodeMirror-hint {
+      padding: 4px 10px !important;
+      border-radius: 5px !important;
+      color: #cdd6f4 !important;
+      white-space: pre !important;
+    }
+    .CodeMirror-hint-active {
+      background: #313244 !important;
+      color: #89b4fa !important;
+    }
 
     /* ─── Scrollbars ──────────────────────────────────────── */
     ::-webkit-scrollbar { width: 6px; height: 6px; }
@@ -1156,6 +1185,12 @@ footer { background: #1a1a2e; color: #888; }`,
 };
 
 // ─── CodeMirror Editors ──────────────────────────────────────────────────────
+const sharedKeys = {
+  'Ctrl-/':     'toggleComment',
+  'Cmd-/':      'toggleComment',
+  'Ctrl-Space': 'autocomplete',
+};
+
 const htmlEditor = CodeMirror.fromTextArea(document.getElementById('htmlEditor'), {
   mode: 'htmlmixed',
   theme: 'dracula',
@@ -1166,7 +1201,8 @@ const htmlEditor = CodeMirror.fromTextArea(document.getElementById('htmlEditor')
   lineWrapping: true,
   tabSize: 2,
   indentWithTabs: false,
-  extraKeys: { 'Ctrl-/': 'toggleComment', 'Cmd-/': 'toggleComment' },
+  extraKeys: sharedKeys,
+  hintOptions: { completeSingle: false, alignWithWord: true },
 });
 
 const cssEditor = CodeMirror.fromTextArea(document.getElementById('cssEditor'), {
@@ -1179,7 +1215,34 @@ const cssEditor = CodeMirror.fromTextArea(document.getElementById('cssEditor'), 
   lineWrapping: true,
   tabSize: 2,
   indentWithTabs: false,
-  extraKeys: { 'Ctrl-/': 'toggleComment', 'Cmd-/': 'toggleComment' },
+  extraKeys: sharedKeys,
+  hintOptions: { completeSingle: false, alignWithWord: true },
+});
+
+// ─── Auto-trigger autocomplete on input ──────────────────────────────────────
+let hintDebounce = null;
+
+function triggerHint(cm) {
+  clearTimeout(hintDebounce);
+  hintDebounce = setTimeout(() => {
+    if (cm.state.completionActive) return; // already open
+    const cursor = cm.getCursor();
+    const token  = cm.getTokenAt(cursor);
+    // Only trigger when the user typed a real character (not whitespace / newline)
+    if (token.string && /[a-zA-Z0-9\-:#\.@]/.test(token.string.slice(-1))) {
+      cm.showHint({ completeSingle: false });
+    }
+  }, 180);
+}
+
+htmlEditor.on('inputRead', (cm, change) => {
+  if (change.origin !== '+input') return;
+  triggerHint(cm);
+});
+
+cssEditor.on('inputRead', (cm, change) => {
+  if (change.origin !== '+input') return;
+  triggerHint(cm);
 });
 
 // Fix CodeMirror size after init
