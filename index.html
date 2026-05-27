@@ -1,0 +1,1441 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>CSS Practice Playground</title>
+
+  <!-- CodeMirror 5 -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/codemirror.min.css" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/theme/dracula.min.css" />
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/codemirror.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/mode/css/css.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/mode/htmlmixed/htmlmixed.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/mode/xml/xml.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/mode/javascript/javascript.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/addon/edit/closebrackets.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/addon/edit/matchbrackets.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/addon/lint/lint.js"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/addon/lint/lint.min.css" />
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/addon/comment/comment.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/addon/selection/active-line.min.js"></script>
+  <!-- CSS Lint for error checking -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/csslint/1.0.5/csslint.min.js"></script>
+
+  <style>
+    /* ─── Reset & Base ────────────────────────────────────── */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg-app:        #1e1e2e;
+      --bg-panel:      #181825;
+      --bg-tab:        #313244;
+      --bg-tab-active: #1e1e2e;
+      --bg-toolbar:    #11111b;
+      --bg-challenge:  #181825;
+      --accent:        #89b4fa;
+      --accent2:       #cba6f7;
+      --accent3:       #a6e3a1;
+      --accent4:       #fab387;
+      --text:          #cdd6f4;
+      --text-muted:    #6c7086;
+      --border:        #313244;
+      --error:         #f38ba8;
+      --warn:          #f9e2af;
+      --radius:        6px;
+      --toolbar-h:     48px;
+      --challenge-h:   220px;
+      --tab-h:         36px;
+      --resizer-w:     5px;
+    }
+
+    html, body {
+      height: 100%;
+      font-family: 'Segoe UI', system-ui, sans-serif;
+      background: var(--bg-app);
+      color: var(--text);
+      overflow: hidden;
+    }
+
+    /* ─── App Shell ───────────────────────────────────────── */
+    #app {
+      display: flex;
+      flex-direction: column;
+      height: 100vh;
+    }
+
+    /* ─── Toolbar ─────────────────────────────────────────── */
+    #toolbar {
+      height: var(--toolbar-h);
+      min-height: var(--toolbar-h);
+      background: var(--bg-toolbar);
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 0 14px;
+      flex-wrap: nowrap;
+      overflow: hidden;
+    }
+
+    #toolbar .logo {
+      font-size: 1rem;
+      font-weight: 700;
+      color: var(--accent);
+      letter-spacing: .5px;
+      white-space: nowrap;
+      margin-right: 6px;
+    }
+    #toolbar .logo span { color: var(--accent2); }
+
+    .toolbar-sep {
+      width: 1px;
+      height: 22px;
+      background: var(--border);
+      flex-shrink: 0;
+    }
+
+    #challengeSelect {
+      flex: 1 1 180px;
+      min-width: 120px;
+      max-width: 280px;
+      background: var(--bg-tab);
+      color: var(--text);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 4px 8px;
+      font-size: .85rem;
+      cursor: pointer;
+      outline: none;
+      transition: border-color .2s;
+    }
+    #challengeSelect:focus { border-color: var(--accent); }
+
+    .btn {
+      height: 30px;
+      padding: 0 14px;
+      border: none;
+      border-radius: var(--radius);
+      font-size: .82rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: opacity .15s, transform .1s;
+      white-space: nowrap;
+      flex-shrink: 0;
+    }
+    .btn:active { transform: scale(.96); }
+    .btn:hover  { opacity: .85; }
+
+    .btn-run    { background: var(--accent3); color: #1e1e2e; }
+    .btn-reset  { background: var(--bg-tab);  color: var(--text); border: 1px solid var(--border); }
+    .btn-hint   { background: var(--accent4); color: #1e1e2e; }
+    .btn-toggle { background: var(--bg-tab);  color: var(--text); border: 1px solid var(--border); }
+    .btn-toggle.active { border-color: var(--accent2); color: var(--accent2); }
+
+    #errorBadge {
+      display: none;
+      background: var(--error);
+      color: #1e1e2e;
+      font-size: .72rem;
+      font-weight: 700;
+      padding: 2px 8px;
+      border-radius: 99px;
+      white-space: nowrap;
+      cursor: default;
+      flex-shrink: 0;
+    }
+    #errorBadge.visible { display: block; }
+
+    /* ─── Main Work Area ──────────────────────────────────── */
+    #workspace {
+      flex: 1 1 0;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+
+    /* Top split: editor | preview */
+    #splitRow {
+      flex: 1 1 0;
+      display: flex;
+      overflow: hidden;
+      position: relative;
+    }
+
+    /* ─── Editor Pane ─────────────────────────────────────── */
+    #editorPane {
+      width: 50%;
+      min-width: 220px;
+      display: flex;
+      flex-direction: column;
+      background: var(--bg-panel);
+      border-right: 1px solid var(--border);
+      overflow: hidden;
+    }
+
+    .tab-bar {
+      display: flex;
+      background: var(--bg-toolbar);
+      border-bottom: 1px solid var(--border);
+      height: var(--tab-h);
+    }
+    .tab-btn {
+      height: var(--tab-h);
+      padding: 0 16px;
+      background: none;
+      border: none;
+      color: var(--text-muted);
+      font-size: .82rem;
+      font-weight: 600;
+      cursor: pointer;
+      border-bottom: 2px solid transparent;
+      transition: color .2s, border-color .2s;
+      white-space: nowrap;
+    }
+    .tab-btn:hover { color: var(--text); }
+    .tab-btn.active { color: var(--accent); border-bottom-color: var(--accent); }
+
+    .editor-wrap {
+      display: none;
+      flex: 1 1 0;
+      flex-direction: column;
+      overflow: hidden;
+    }
+    .editor-wrap.active { display: flex; }
+
+    .CodeMirror {
+      flex: 1 1 0;
+      height: 100% !important;
+      font-size: 13.5px;
+      line-height: 1.6;
+      font-family: 'Cascadia Code', 'Fira Code', 'JetBrains Mono', Consolas, monospace;
+    }
+
+    /* ─── Drag Resizer ────────────────────────────────────── */
+    #resizer {
+      width: var(--resizer-w);
+      min-width: var(--resizer-w);
+      cursor: col-resize;
+      background: var(--border);
+      transition: background .2s;
+      z-index: 10;
+    }
+    #resizer:hover, #resizer.dragging { background: var(--accent); }
+
+    /* ─── Preview Pane ────────────────────────────────────── */
+    #previewPane {
+      flex: 1 1 0;
+      min-width: 220px;
+      display: flex;
+      flex-direction: column;
+      background: var(--bg-panel);
+      overflow: hidden;
+    }
+
+    .pane-header {
+      height: var(--tab-h);
+      background: var(--bg-toolbar);
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      padding: 0 14px;
+      font-size: .78rem;
+      color: var(--text-muted);
+      font-weight: 600;
+      letter-spacing: .4px;
+      text-transform: uppercase;
+      gap: 8px;
+    }
+    .pane-header .status-dot {
+      width: 7px; height: 7px;
+      border-radius: 50%;
+      background: var(--accent3);
+    }
+
+    #previewFrame {
+      flex: 1 1 0;
+      border: none;
+      background: #fff;
+    }
+
+    /* ─── Challenge Panel ─────────────────────────────────── */
+    #challengePanel {
+      height: var(--challenge-h);
+      min-height: 120px;
+      background: var(--bg-challenge);
+      border-top: 1px solid var(--border);
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      transition: height .25s ease;
+    }
+    #challengePanel.hidden {
+      height: 0 !important;
+      min-height: 0;
+      border-top: none;
+    }
+
+    #vResizer {
+      height: 5px;
+      cursor: row-resize;
+      background: var(--border);
+      transition: background .2s;
+      z-index: 10;
+    }
+    #vResizer:hover, #vResizer.dragging { background: var(--accent2); }
+
+    .challenge-header {
+      height: 36px;
+      background: var(--bg-toolbar);
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      padding: 0 14px;
+      gap: 10px;
+      flex-shrink: 0;
+    }
+    .challenge-header h3 {
+      font-size: .82rem;
+      color: var(--accent2);
+      letter-spacing: .4px;
+      text-transform: uppercase;
+      flex: 1;
+    }
+
+    .challenge-body {
+      flex: 1 1 0;
+      display: flex;
+      overflow: hidden;
+      gap: 0;
+    }
+
+    .challenge-desc {
+      flex: 1 1 0;
+      padding: 14px 18px;
+      overflow-y: auto;
+      font-size: .85rem;
+      line-height: 1.65;
+      color: var(--text);
+      scrollbar-width: thin;
+    }
+    .challenge-desc h4 {
+      color: var(--accent);
+      margin-bottom: 6px;
+      font-size: .9rem;
+    }
+    .challenge-desc ul {
+      padding-left: 18px;
+    }
+    .challenge-desc li { margin-bottom: 4px; }
+    .challenge-desc code {
+      background: var(--bg-tab);
+      padding: 1px 5px;
+      border-radius: 3px;
+      font-family: monospace;
+      font-size: .82rem;
+      color: var(--accent4);
+    }
+    .challenge-desc .badge {
+      display: inline-block;
+      padding: 1px 8px;
+      border-radius: 99px;
+      font-size: .72rem;
+      font-weight: 700;
+      margin-bottom: 8px;
+    }
+    .badge-easy   { background: #a6e3a120; color: var(--accent3); border: 1px solid var(--accent3); }
+    .badge-medium { background: #f9e2af20; color: var(--warn); border: 1px solid var(--warn); }
+    .badge-hard   { background: #f38ba820; color: var(--error); border: 1px solid var(--error); }
+
+    .challenge-hints {
+      width: 280px;
+      flex-shrink: 0;
+      border-left: 1px solid var(--border);
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+    .hints-header {
+      padding: 10px 14px 6px;
+      font-size: .75rem;
+      text-transform: uppercase;
+      color: var(--text-muted);
+      letter-spacing: .4px;
+      flex-shrink: 0;
+    }
+    #hintList {
+      flex: 1 1 0;
+      overflow-y: auto;
+      padding: 0 10px 10px;
+      scrollbar-width: thin;
+    }
+    .hint-item {
+      background: var(--bg-tab);
+      border-radius: var(--radius);
+      margin-bottom: 6px;
+      overflow: hidden;
+    }
+    .hint-step {
+      padding: 7px 11px;
+      font-size: .78rem;
+      color: var(--text-muted);
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      user-select: none;
+    }
+    .hint-step:hover { color: var(--text); }
+    .hint-step .step-num {
+      width: 18px; height: 18px;
+      background: var(--bg-toolbar);
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: .68rem;
+      font-weight: 700;
+      flex-shrink: 0;
+      color: var(--accent);
+    }
+    .hint-code {
+      display: none;
+      padding: 8px 11px;
+      background: var(--bg-toolbar);
+      font-family: monospace;
+      font-size: .78rem;
+      color: var(--accent4);
+      white-space: pre-wrap;
+      word-break: break-all;
+    }
+    .hint-item.open .hint-code { display: block; }
+    .hint-apply-btn {
+      display: none;
+      margin: 4px 11px 8px;
+      padding: 3px 10px;
+      font-size: .72rem;
+      border-radius: var(--radius);
+      background: var(--accent2);
+      color: #1e1e2e;
+      border: none;
+      cursor: pointer;
+      font-weight: 600;
+    }
+    .hint-item.open .hint-apply-btn { display: inline-block; }
+    .hint-apply-btn:hover { opacity: .8; }
+
+    /* ─── Error Panel ─────────────────────────────────────── */
+    #errorPanel {
+      position: fixed;
+      bottom: 10px;
+      right: 12px;
+      max-width: 360px;
+      background: var(--bg-toolbar);
+      border: 1px solid var(--error);
+      border-radius: var(--radius);
+      overflow: hidden;
+      z-index: 1000;
+      display: none;
+      box-shadow: 0 4px 24px #0008;
+    }
+    #errorPanel.visible { display: block; }
+    #errorPanel .ep-header {
+      background: #f38ba815;
+      padding: 6px 12px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      font-size: .75rem;
+      color: var(--error);
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: .4px;
+    }
+    #errorPanel .ep-close {
+      background: none;
+      border: none;
+      color: var(--error);
+      cursor: pointer;
+      font-size: 1rem;
+      line-height: 1;
+    }
+    #errorList {
+      max-height: 160px;
+      overflow-y: auto;
+      padding: 8px 12px;
+      scrollbar-width: thin;
+    }
+    .error-item {
+      font-size: .78rem;
+      color: var(--text);
+      padding: 4px 0;
+      border-bottom: 1px solid var(--border);
+      line-height: 1.5;
+    }
+    .error-item:last-child { border-bottom: none; }
+    .error-item .err-type {
+      font-size: .68rem;
+      font-weight: 700;
+      padding: 1px 5px;
+      border-radius: 3px;
+      margin-right: 5px;
+    }
+    .err-error { background: #f38ba820; color: var(--error); }
+    .err-warning { background: #f9e2af20; color: var(--warn); }
+
+    /* ─── Scrollbars ──────────────────────────────────────── */
+    ::-webkit-scrollbar { width: 6px; height: 6px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: var(--bg-tab); border-radius: 3px; }
+    ::-webkit-scrollbar-thumb:hover { background: var(--text-muted); }
+
+    /* ─── Mobile Layout ───────────────────────────────────── */
+    @media (max-width: 700px) {
+      #toolbar { flex-wrap: wrap; height: auto; padding: 8px 10px; gap: 7px; }
+      #splitRow { flex-direction: column; }
+      #editorPane { width: 100% !important; min-height: 240px; height: 40vh; border-right: none; border-bottom: 1px solid var(--border); }
+      #resizer { display: none; }
+      #previewPane { flex: 1 1 0; }
+      #challengePanel { height: auto; max-height: 300px; }
+      .challenge-hints { width: 100%; border-left: none; border-top: 1px solid var(--border); }
+      .challenge-body { flex-direction: column; }
+      #errorPanel { max-width: calc(100vw - 20px); right: 10px; }
+    }
+  </style>
+</head>
+<body>
+<div id="app">
+
+  <!-- ── Toolbar ── -->
+  <div id="toolbar">
+    <div class="logo">CSS<span>Forge</span></div>
+
+    <div class="toolbar-sep"></div>
+
+    <select id="challengeSelect">
+      <option value="blank">── Free Play ──</option>
+      <optgroup label="Beginner">
+        <option value="center-div">① Center a Div</option>
+        <option value="color-box">② Color Box Basics</option>
+        <option value="typography">③ Typography Styles</option>
+      </optgroup>
+      <optgroup label="Intermediate">
+        <option value="flexbox-nav">④ Flexbox Nav Bar</option>
+        <option value="card-hover">⑤ Card with Hover Effect</option>
+        <option value="grid-layout">⑥ CSS Grid Layout</option>
+      </optgroup>
+      <optgroup label="Advanced">
+        <option value="animated-button">⑦ Animated Button</option>
+        <option value="glassmorphism">⑧ Glassmorphism Card</option>
+        <option value="responsive-nav">⑨ Responsive Nav</option>
+      </optgroup>
+    </select>
+
+    <button class="btn btn-run"    id="runBtn">▶ Run</button>
+    <button class="btn btn-reset"  id="resetBtn">↺ Reset</button>
+    <button class="btn btn-hint"   id="hintBtn">💡 Hints</button>
+    <button class="btn btn-toggle" id="challengeToggleBtn">📋 Challenge</button>
+    <span   id="errorBadge">⚠ CSS errors</span>
+  </div>
+
+  <!-- ── Workspace ── -->
+  <div id="workspace">
+
+    <!-- Vertical resizer for challenge panel -->
+    <div id="vResizer"></div>
+
+    <!-- Main split row -->
+    <div id="splitRow">
+
+      <!-- Editor pane -->
+      <div id="editorPane">
+        <div class="tab-bar">
+          <button class="tab-btn active" data-tab="html">HTML</button>
+          <button class="tab-btn"        data-tab="css">CSS</button>
+        </div>
+
+        <div class="editor-wrap active" id="wrap-html">
+          <textarea id="htmlEditor"></textarea>
+        </div>
+        <div class="editor-wrap" id="wrap-css">
+          <textarea id="cssEditor"></textarea>
+        </div>
+      </div>
+
+      <!-- Drag resizer -->
+      <div id="resizer"></div>
+
+      <!-- Preview pane -->
+      <div id="previewPane">
+        <div class="pane-header">
+          <div class="status-dot" id="statusDot"></div>
+          Live Preview
+        </div>
+        <iframe id="previewFrame"
+          sandbox="allow-scripts allow-same-origin"
+          title="Live Preview"></iframe>
+      </div>
+
+    </div>
+
+    <!-- Challenge panel (above splitRow visually but rendered below for DOM order) -->
+    <div id="challengePanel" class="hidden">
+      <div class="challenge-header">
+        <h3 id="challengeTitle">Challenge</h3>
+        <button class="btn btn-toggle" id="loadChallengeBtn" style="font-size:.72rem;height:24px;padding:0 10px;">Load Starter Code</button>
+      </div>
+      <div class="challenge-body">
+        <div class="challenge-desc" id="challengeDesc">Select a challenge from the dropdown above.</div>
+        <div class="challenge-hints">
+          <div class="hints-header">Hints</div>
+          <div id="hintList"></div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+</div>
+
+<!-- Error Panel -->
+<div id="errorPanel">
+  <div class="ep-header">
+    CSS Issues
+    <button class="ep-close" id="closeErrors">×</button>
+  </div>
+  <div id="errorList"></div>
+</div>
+
+<script>
+// ─── Challenge Data ──────────────────────────────────────────────────────────
+const CHALLENGES = {
+  blank: {
+    title: 'Free Play',
+    difficulty: null,
+    description: '<p>Write any HTML and CSS you like. Use the editors on the left and click <strong>Run</strong> to see the result.</p>',
+    html: `<div class="box">Hello, CSS!</div>`,
+    css: `.box {\n  padding: 40px;\n  text-align: center;\n  font-size: 2rem;\n  font-family: sans-serif;\n}`,
+    hints: []
+  },
+
+  'center-div': {
+    title: 'Center a Div',
+    difficulty: 'easy',
+    description: `
+      <span class="badge badge-easy">Easy</span>
+      <h4>🎯 Goal</h4>
+      <p>Horizontally <em>and</em> vertically center the <code>.box</code> inside the <code>.container</code>.</p>
+      <h4>Requirements</h4>
+      <ul>
+        <li>The container fills the full viewport</li>
+        <li>The box is perfectly centered both ways</li>
+        <li>Try using <strong>Flexbox</strong></li>
+      </ul>
+    `,
+    html: `<div class="container">
+  <div class="box">Centered!</div>
+</div>`,
+    css: `/* Make .container fill the screen and center .box */
+.container {
+
+}
+
+.box {
+  width: 200px;
+  height: 100px;
+  background: #89b4fa;
+  color: #1e1e2e;
+  font-size: 1.4rem;
+  font-family: sans-serif;
+  font-weight: bold;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}`,
+    hints: [
+      { label: 'Set container dimensions', code: `.container {\n  width: 100vw;\n  height: 100vh;\n}` },
+      { label: 'Add display: flex', code: `.container {\n  display: flex;\n}` },
+      { label: 'Center horizontally', code: `.container {\n  justify-content: center;\n}` },
+      { label: 'Center vertically', code: `.container {\n  align-items: center;\n}` },
+    ]
+  },
+
+  'color-box': {
+    title: 'Color Box Basics',
+    difficulty: 'easy',
+    description: `
+      <span class="badge badge-easy">Easy</span>
+      <h4>🎯 Goal</h4>
+      <p>Style three boxes to each have a different background color, equal size, and rounded corners.</p>
+      <h4>Requirements</h4>
+      <ul>
+        <li>Each box: <code>150px × 150px</code></li>
+        <li>Different <code>background-color</code> for each</li>
+        <li><code>border-radius: 12px</code></li>
+        <li>Displayed in a row with <code>gap: 20px</code></li>
+      </ul>
+    `,
+    html: `<div class="row">
+  <div class="box box-1">One</div>
+  <div class="box box-2">Two</div>
+  <div class="box box-3">Three</div>
+</div>`,
+    css: `.row {
+  display: flex;
+  gap: 20px;
+  padding: 40px;
+  font-family: sans-serif;
+}
+
+.box {
+  /* Add size, border-radius, centered text here */
+}
+
+.box-1 { /* color 1 */ }
+.box-2 { /* color 2 */ }
+.box-3 { /* color 3 */ }`,
+    hints: [
+      { label: 'Set box size', code: `.box {\n  width: 150px;\n  height: 150px;\n}` },
+      { label: 'Add border radius', code: `.box {\n  border-radius: 12px;\n}` },
+      { label: 'Center text', code: `.box {\n  display: flex;\n  align-items: center;\n  justify-content: center;\n  font-weight: bold;\n  font-size: 1.1rem;\n}` },
+      { label: 'Add colors', code: `.box-1 { background: #f38ba8; }\n.box-2 { background: #a6e3a1; }\n.box-3 { background: #89b4fa; }` },
+    ]
+  },
+
+  'typography': {
+    title: 'Typography Styles',
+    difficulty: 'easy',
+    description: `
+      <span class="badge badge-easy">Easy</span>
+      <h4>🎯 Goal</h4>
+      <p>Style the text elements to create a polished article look.</p>
+      <h4>Requirements</h4>
+      <ul>
+        <li><code>h1</code>: large, dark, tight letter-spacing</li>
+        <li><code>p</code>: comfortable line-height (~1.7)</li>
+        <li><code>a</code>: custom color, no underline by default, underline on hover</li>
+        <li><code>blockquote</code>: left border, italic, muted text</li>
+      </ul>
+    `,
+    html: `<article>
+  <h1>The Art of CSS</h1>
+  <p>CSS is a <a href="#">powerful</a> styling language that
+  controls how web pages look and feel. Mastering it opens
+  a world of creative possibilities.</p>
+  <blockquote>
+    "Design is intelligence made visible."
+  </blockquote>
+  <p>Learn it step by step and you'll be amazed
+  how much you can create with just a few lines.</p>
+</article>`,
+    css: `body { background: #f8f8f8; }
+article {
+  max-width: 600px;
+  margin: 60px auto;
+  padding: 0 20px;
+  font-family: Georgia, serif;
+}
+
+h1 { /* style me */ }
+p  { /* style me */ }
+a  { /* style me */ }
+blockquote { /* style me */ }`,
+    hints: [
+      { label: 'Style h1', code: `h1 {\n  font-size: 2.4rem;\n  color: #1a1a2e;\n  letter-spacing: -1px;\n  margin-bottom: 16px;\n}` },
+      { label: 'Style paragraphs', code: `p {\n  color: #444;\n  line-height: 1.75;\n  margin-bottom: 1rem;\n}` },
+      { label: 'Style links', code: `a {\n  color: #6c63ff;\n  text-decoration: none;\n}\na:hover {\n  text-decoration: underline;\n}` },
+      { label: 'Style blockquote', code: `blockquote {\n  border-left: 4px solid #6c63ff;\n  padding: 8px 20px;\n  margin: 20px 0;\n  font-style: italic;\n  color: #666;\n  background: #f0eeff;\n}` },
+    ]
+  },
+
+  'flexbox-nav': {
+    title: 'Flexbox Nav Bar',
+    difficulty: 'medium',
+    description: `
+      <span class="badge badge-medium">Medium</span>
+      <h4>🎯 Goal</h4>
+      <p>Build a navigation bar using <strong>Flexbox</strong> with a logo on the left and nav links on the right.</p>
+      <h4>Requirements</h4>
+      <ul>
+        <li>Dark background nav bar, full width</li>
+        <li>Logo on the far left, links on the far right</li>
+        <li>Links highlighted on hover (background + color change)</li>
+        <li>Comfortable padding and spacing between items</li>
+      </ul>
+    `,
+    html: `<nav>
+  <a class="logo" href="#">MyBrand</a>
+  <ul class="nav-links">
+    <li><a href="#">Home</a></li>
+    <li><a href="#">About</a></li>
+    <li><a href="#">Work</a></li>
+    <li><a href="#">Contact</a></li>
+  </ul>
+</nav>
+
+<main>
+  <h2>Welcome to the page</h2>
+  <p>The nav bar sits above this content.</p>
+</main>`,
+    css: `* { box-sizing: border-box; margin: 0; padding: 0; }
+
+nav {
+  /* flexbox, space-between, background */
+}
+
+.logo {
+  /* large, bold, colored */
+}
+
+.nav-links {
+  /* flex row, no list style */
+}
+
+.nav-links a {
+  /* padding, hover transition */
+}
+
+.nav-links a:hover { }
+
+main {
+  padding: 40px;
+  font-family: sans-serif;
+}`,
+    hints: [
+      { label: 'Base nav styles', code: `nav {\n  display: flex;\n  align-items: center;\n  justify-content: space-between;\n  background: #1a1a2e;\n  padding: 0 24px;\n  height: 60px;\n}` },
+      { label: 'Logo style', code: `.logo {\n  font-size: 1.3rem;\n  font-weight: 800;\n  color: #89b4fa;\n  text-decoration: none;\n  letter-spacing: -0.5px;\n}` },
+      { label: 'Nav links list', code: `.nav-links {\n  display: flex;\n  list-style: none;\n  gap: 4px;\n}\n.nav-links a {\n  color: #cdd6f4;\n  text-decoration: none;\n  padding: 8px 14px;\n  border-radius: 6px;\n  font-family: sans-serif;\n  font-size: .9rem;\n  transition: background .2s, color .2s;\n}` },
+      { label: 'Hover effect', code: `.nav-links a:hover {\n  background: #313244;\n  color: #89b4fa;\n}` },
+    ]
+  },
+
+  'card-hover': {
+    title: 'Card with Hover Effect',
+    difficulty: 'medium',
+    description: `
+      <span class="badge badge-medium">Medium</span>
+      <h4>🎯 Goal</h4>
+      <p>Style a product card that lifts and shows a shadow on hover.</p>
+      <h4>Requirements</h4>
+      <ul>
+        <li>Rounded card with white background</li>
+        <li>Image area (use a placeholder background color)</li>
+        <li>On hover: card lifts (<code>translateY</code>), shadow deepens</li>
+        <li>Smooth <code>transition</code> on all changes</li>
+      </ul>
+    `,
+    html: `<div class="cards-row">
+  <div class="card">
+    <div class="card-img"></div>
+    <div class="card-body">
+      <h3>Product Name</h3>
+      <p>A short description of this awesome product.</p>
+      <button class="card-btn">Buy Now</button>
+    </div>
+  </div>
+  <div class="card">
+    <div class="card-img" style="background:#cba6f7;"></div>
+    <div class="card-body">
+      <h3>Another Product</h3>
+      <p>This one is even more awesome than the last.</p>
+      <button class="card-btn">Buy Now</button>
+    </div>
+  </div>
+</div>`,
+    css: `body {
+  background: #f0f0f5;
+  font-family: sans-serif;
+  padding: 40px;
+}
+
+.cards-row {
+  display: flex;
+  gap: 24px;
+  flex-wrap: wrap;
+}
+
+.card {
+  /* width, background, radius, shadow, transition */
+}
+
+.card:hover {
+  /* lift + deeper shadow */
+}
+
+.card-img {
+  /* height, background color */
+  background: #89b4fa;
+}
+
+.card-body { /* padding */ }
+.card-body h3 { /* margin */ }
+.card-body p  { /* color, size */ }
+
+.card-btn {
+  /* styled button */
+}`,
+    hints: [
+      { label: 'Base card styles', code: `.card {\n  width: 240px;\n  background: #fff;\n  border-radius: 14px;\n  overflow: hidden;\n  box-shadow: 0 2px 12px rgba(0,0,0,.08);\n  transition: transform .25s, box-shadow .25s;\n}` },
+      { label: 'Hover lift effect', code: `.card:hover {\n  transform: translateY(-6px);\n  box-shadow: 0 12px 32px rgba(0,0,0,.15);\n}` },
+      { label: 'Card image area', code: `.card-img {\n  height: 160px;\n  background: #89b4fa;\n}` },
+      { label: 'Card body & button', code: `.card-body {\n  padding: 16px;\n}\n.card-body h3 {\n  margin-bottom: 8px;\n  font-size: 1.05rem;\n}\n.card-body p {\n  font-size: .85rem;\n  color: #666;\n  margin-bottom: 14px;\n  line-height: 1.5;\n}\n.card-btn {\n  background: #6c63ff;\n  color: #fff;\n  border: none;\n  padding: 8px 18px;\n  border-radius: 6px;\n  cursor: pointer;\n  font-size: .85rem;\n  font-weight: 600;\n  transition: background .2s;\n}\n.card-btn:hover {\n  background: #5a52d5;\n}` },
+    ]
+  },
+
+  'grid-layout': {
+    title: 'CSS Grid Layout',
+    difficulty: 'medium',
+    description: `
+      <span class="badge badge-medium">Medium</span>
+      <h4>🎯 Goal</h4>
+      <p>Build a classic page layout using <strong>CSS Grid</strong> with header, sidebar, main content, and footer.</p>
+      <h4>Requirements</h4>
+      <ul>
+        <li>Grid with named template areas</li>
+        <li>Sidebar: 220px wide, main: remaining space</li>
+        <li>Header and footer span full width</li>
+        <li>Visible borders/backgrounds to distinguish areas</li>
+      </ul>
+    `,
+    html: `<div class="layout">
+  <header>Header</header>
+  <aside>Sidebar</aside>
+  <main>Main Content</main>
+  <footer>Footer</footer>
+</div>`,
+    css: `* { box-sizing: border-box; margin: 0; padding: 0; }
+
+.layout {
+  /* grid, template-areas, min-height: 100vh */
+}
+
+header { grid-area: header; }
+aside  { grid-area: sidebar; }
+main   { grid-area: main; }
+footer { grid-area: footer; }
+
+/* Add colors + padding below */
+header { background: #1a1a2e; color: #fff; }
+aside  { background: #252540; color: #ccc; }
+main   { background: #f8f8ff; }
+footer { background: #1a1a2e; color: #888; }`,
+    hints: [
+      { label: 'Grid container setup', code: `.layout {\n  display: grid;\n  min-height: 100vh;\n  grid-template-columns: 220px 1fr;\n  grid-template-rows: 60px 1fr 50px;\n}` },
+      { label: 'Template areas', code: `.layout {\n  grid-template-areas:\n    "header header"\n    "sidebar main"\n    "footer footer";\n}` },
+      { label: 'Add padding to regions', code: `header, footer, aside, main {\n  padding: 20px 24px;\n  font-family: sans-serif;\n  font-size: .95rem;\n}` },
+      { label: 'Font colors', code: `main {\n  color: #333;\n}\naside {\n  font-size: .85rem;\n  line-height: 1.8;\n}` },
+    ]
+  },
+
+  'animated-button': {
+    title: 'Animated Button',
+    difficulty: 'hard',
+    description: `
+      <span class="badge badge-hard">Hard</span>
+      <h4>🎯 Goal</h4>
+      <p>Create a button with a smooth ripple/fill animation on hover using only CSS.</p>
+      <h4>Requirements</h4>
+      <ul>
+        <li>Button fills with color from left to right on hover</li>
+        <li>Uses <code>::before</code> pseudo-element + <code>transform: scaleX()</code></li>
+        <li>Text color changes mid-animation using <code>transition</code></li>
+        <li><code>overflow: hidden</code> on button to clip the fill</li>
+      </ul>
+    `,
+    html: `<div class="btn-showcase">
+  <button class="fancy-btn">Hover Me</button>
+  <button class="fancy-btn fancy-btn--outline">Outline Fill</button>
+</div>`,
+    css: `body {
+  background: #1a1a2e;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 100vh;
+}
+
+.btn-showcase {
+  display: flex;
+  gap: 20px;
+}
+
+.fancy-btn {
+  /* base: padding, border, font, cursor, overflow:hidden, position:relative */
+}
+
+.fancy-btn::before {
+  /* pseudo fill layer */
+}
+
+.fancy-btn:hover::before {
+  /* expand fill */
+}
+
+.fancy-btn--outline {
+  /* variation */
+}`,
+    hints: [
+      { label: 'Base button', code: `.fancy-btn {\n  padding: 12px 32px;\n  font-size: 1rem;\n  font-family: sans-serif;\n  font-weight: 700;\n  border: 2px solid #89b4fa;\n  background: transparent;\n  color: #89b4fa;\n  cursor: pointer;\n  border-radius: 4px;\n  position: relative;\n  overflow: hidden;\n  transition: color .3s;\n  letter-spacing: .5px;\n}` },
+      { label: 'Pseudo-element fill', code: `.fancy-btn::before {\n  content: '';\n  position: absolute;\n  inset: 0;\n  background: #89b4fa;\n  transform: scaleX(0);\n  transform-origin: left;\n  transition: transform .3s ease;\n  z-index: 0;\n}` },
+      { label: 'Hover expand fill', code: `.fancy-btn:hover::before {\n  transform: scaleX(1);\n}\n.fancy-btn:hover {\n  color: #1a1a2e;\n}` },
+      { label: 'Fix z-index on text', code: `/* Wrap button text in a span or set: */\n.fancy-btn span {\n  position: relative;\n  z-index: 1;\n}\n/* Or add to fancy-btn:\n   z-index on the ::before only */` },
+    ]
+  },
+
+  'glassmorphism': {
+    title: 'Glassmorphism Card',
+    difficulty: 'hard',
+    description: `
+      <span class="badge badge-hard">Hard</span>
+      <h4>🎯 Goal</h4>
+      <p>Create a frosted-glass card over a colorful gradient background.</p>
+      <h4>Requirements</h4>
+      <ul>
+        <li>Gradient background on the page</li>
+        <li>Card uses <code>backdrop-filter: blur()</code></li>
+        <li>Semi-transparent white background: <code>rgba(255,255,255,0.1)</code></li>
+        <li>Subtle white border: <code>rgba(255,255,255,0.2)</code></li>
+        <li>Colored blobs behind card for maximum effect</li>
+      </ul>
+    `,
+    html: `<div class="scene">
+  <div class="blob blob-1"></div>
+  <div class="blob blob-2"></div>
+  <div class="glass-card">
+    <h2>Glass Card</h2>
+    <p>This card uses backdrop-filter to create
+    a frosted glass effect over the background.</p>
+    <button class="glass-btn">Learn More</button>
+  </div>
+</div>`,
+    css: `* { box-sizing: border-box; margin: 0; padding: 0; }
+
+.scene {
+  /* full viewport, dark gradient bg, centered flex */
+}
+
+.blob {
+  /* absolute positioned colored circles for depth */
+  position: absolute;
+  border-radius: 50%;
+  filter: blur(60px);
+  opacity: .6;
+}
+
+.blob-1 { }
+.blob-2 { }
+
+.glass-card {
+  /* the glass effect */
+  position: relative;
+  z-index: 1;
+}
+
+.glass-btn { }`,
+    hints: [
+      { label: 'Scene background', code: `.scene {\n  width: 100vw;\n  height: 100vh;\n  background: linear-gradient(135deg, #0f0c29, #302b63, #24243e);\n  display: flex;\n  align-items: center;\n  justify-content: center;\n  overflow: hidden;\n  position: relative;\n}` },
+      { label: 'Colored blobs', code: `.blob-1 {\n  width: 300px; height: 300px;\n  background: #cba6f7;\n  top: -80px; left: -80px;\n}\n.blob-2 {\n  width: 250px; height: 250px;\n  background: #89b4fa;\n  bottom: -60px; right: -60px;\n}` },
+      { label: 'Glass card base', code: `.glass-card {\n  background: rgba(255,255,255,.1);\n  backdrop-filter: blur(20px);\n  -webkit-backdrop-filter: blur(20px);\n  border: 1px solid rgba(255,255,255,.2);\n  border-radius: 20px;\n  padding: 40px 36px;\n  max-width: 380px;\n  color: #fff;\n  font-family: sans-serif;\n}` },
+      { label: 'Card contents + button', code: `.glass-card h2 {\n  font-size: 1.6rem;\n  margin-bottom: 12px;\n  letter-spacing: -.5px;\n}\n.glass-card p {\n  font-size: .9rem;\n  line-height: 1.6;\n  opacity: .8;\n  margin-bottom: 24px;\n}\n.glass-btn {\n  background: rgba(255,255,255,.2);\n  border: 1px solid rgba(255,255,255,.3);\n  color: #fff;\n  padding: 10px 24px;\n  border-radius: 8px;\n  cursor: pointer;\n  font-size: .9rem;\n  transition: background .2s;\n}\n.glass-btn:hover {\n  background: rgba(255,255,255,.35);\n}` },
+    ]
+  },
+
+  'responsive-nav': {
+    title: 'Responsive Nav',
+    difficulty: 'hard',
+    description: `
+      <span class="badge badge-hard">Hard</span>
+      <h4>🎯 Goal</h4>
+      <p>Build a nav bar that collapses into a hamburger menu on small screens using only CSS.</p>
+      <h4>Requirements</h4>
+      <ul>
+        <li>Desktop: horizontal links, no hamburger icon</li>
+        <li>Mobile (&lt;600px): links hidden, hamburger icon visible</li>
+        <li>Uses CSS <code>:checked</code> hack on hidden checkbox to toggle menu</li>
+        <li>Menu slides down when hamburger is clicked</li>
+        <li>No JavaScript</li>
+      </ul>
+    `,
+    html: `<nav class="top-nav">
+  <a class="brand" href="#">Logo</a>
+
+  <!-- CSS-only toggle -->
+  <input type="checkbox" id="nav-toggle" class="nav-checkbox" />
+  <label for="nav-toggle" class="nav-hamburger">
+    <span></span><span></span><span></span>
+  </label>
+
+  <ul class="nav-menu">
+    <li><a href="#">Home</a></li>
+    <li><a href="#">Portfolio</a></li>
+    <li><a href="#">Blog</a></li>
+    <li><a href="#">Contact</a></li>
+  </ul>
+</nav>
+<div style="padding:40px;font-family:sans-serif;color:#333;">
+  <h2>Page Content</h2>
+  <p>Resize the preview pane narrow to trigger mobile mode.</p>
+</div>`,
+    css: `* { box-sizing: border-box; margin: 0; padding: 0; }
+
+.top-nav {
+  /* flex, background, padding, position:relative */
+}
+
+.brand { }
+.nav-checkbox { display: none; }
+.nav-hamburger { display: none; }
+.nav-hamburger span { }
+
+.nav-menu { }
+.nav-menu a { }
+.nav-menu a:hover { }
+
+/* Mobile */
+@media (max-width: 600px) {
+  .nav-hamburger { display: flex; }
+  .nav-menu { /* hidden by default on mobile */ }
+  .nav-checkbox:checked ~ .nav-menu { /* show */ }
+}`,
+    hints: [
+      { label: 'Base nav', code: `.top-nav {\n  display: flex;\n  align-items: center;\n  justify-content: space-between;\n  background: #1a1a2e;\n  padding: 0 20px;\n  height: 56px;\n  position: relative;\n  flex-wrap: wrap;\n}\n.brand {\n  color: #89b4fa;\n  font-weight: 800;\n  font-size: 1.2rem;\n  text-decoration: none;\n  font-family: sans-serif;\n}` },
+      { label: 'Desktop menu links', code: `.nav-menu {\n  display: flex;\n  list-style: none;\n  gap: 4px;\n}\n.nav-menu a {\n  color: #cdd6f4;\n  text-decoration: none;\n  padding: 8px 14px;\n  border-radius: 6px;\n  font-family: sans-serif;\n  font-size: .88rem;\n  transition: background .2s;\n}\n.nav-menu a:hover { background: #313244; }` },
+      { label: 'Hamburger icon', code: `.nav-hamburger {\n  display: none;\n  flex-direction: column;\n  gap: 5px;\n  cursor: pointer;\n  padding: 5px;\n}\n.nav-hamburger span {\n  width: 24px; height: 2px;\n  background: #cdd6f4;\n  border-radius: 2px;\n  display: block;\n  transition: transform .25s;\n}` },
+      { label: 'Mobile toggle (CSS hack)', code: `@media (max-width: 600px) {\n  .nav-hamburger { display: flex; }\n  .nav-menu {\n    display: none;\n    width: 100%;\n    flex-direction: column;\n    background: #252540;\n    padding: 8px 0;\n  }\n  .nav-menu li a {\n    display: block;\n    padding: 12px 20px;\n  }\n  .nav-checkbox:checked ~ .nav-menu {\n    display: flex;\n  }\n}` },
+    ]
+  },
+};
+
+// ─── CodeMirror Editors ──────────────────────────────────────────────────────
+const htmlEditor = CodeMirror.fromTextArea(document.getElementById('htmlEditor'), {
+  mode: 'htmlmixed',
+  theme: 'dracula',
+  lineNumbers: true,
+  autoCloseBrackets: true,
+  matchBrackets: true,
+  styleActiveLine: true,
+  lineWrapping: true,
+  tabSize: 2,
+  indentWithTabs: false,
+  extraKeys: { 'Ctrl-/': 'toggleComment', 'Cmd-/': 'toggleComment' },
+});
+
+const cssEditor = CodeMirror.fromTextArea(document.getElementById('cssEditor'), {
+  mode: 'css',
+  theme: 'dracula',
+  lineNumbers: true,
+  autoCloseBrackets: true,
+  matchBrackets: true,
+  styleActiveLine: true,
+  lineWrapping: true,
+  tabSize: 2,
+  indentWithTabs: false,
+  extraKeys: { 'Ctrl-/': 'toggleComment', 'Cmd-/': 'toggleComment' },
+});
+
+// Fix CodeMirror size after init
+function refreshEditors() {
+  htmlEditor.refresh();
+  cssEditor.refresh();
+}
+setTimeout(refreshEditors, 50);
+window.addEventListener('resize', refreshEditors);
+
+// ─── Preview Engine ──────────────────────────────────────────────────────────
+const frame = document.getElementById('previewFrame');
+const statusDot = document.getElementById('statusDot');
+let debounceTimer = null;
+
+function buildDoc(html, css) {
+  return `<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<style>
+  *,*::before,*::after{box-sizing:border-box;}
+  body{margin:0;}
+${css}
+</style>
+</head>
+<body>
+${html}
+</body>
+</html>`;
+}
+
+function runPreview() {
+  const html = htmlEditor.getValue();
+  const css  = cssEditor.getValue();
+  const doc  = buildDoc(html, css);
+
+  statusDot.style.background = 'var(--warn)';
+  try {
+    const blob = new Blob([doc], { type: 'text/html' });
+    const url  = URL.createObjectURL(blob);
+    const old  = frame.src;
+    frame.src  = url;
+    if (old && old.startsWith('blob:')) URL.revokeObjectURL(old);
+    statusDot.style.background = 'var(--accent3)';
+  } catch (e) {
+    statusDot.style.background = 'var(--error)';
+  }
+
+  validateCSS(css);
+}
+
+function scheduleRun() {
+  clearTimeout(debounceTimer);
+  debounceTimer = setTimeout(runPreview, 600);
+}
+
+htmlEditor.on('change', scheduleRun);
+cssEditor.on('change',  scheduleRun);
+
+// ─── CSS Validation ──────────────────────────────────────────────────────────
+const errorBadge  = document.getElementById('errorBadge');
+const errorPanel  = document.getElementById('errorPanel');
+const errorList   = document.getElementById('errorList');
+
+function validateCSS(css) {
+  if (!css.trim() || typeof CSSLint === 'undefined') { clearErrors(); return; }
+  try {
+    const result = CSSLint.verify(css, {
+      'known-properties': true,
+      'duplicate-properties': true,
+      'empty-rules': false,
+      'important': false,
+    });
+    const messages = result.messages.filter(m => m.type === 'error' || m.type === 'warning');
+    if (messages.length > 0) {
+      errorBadge.textContent = `⚠ ${messages.length} CSS issue${messages.length > 1 ? 's' : ''}`;
+      errorBadge.classList.add('visible');
+      errorList.innerHTML = messages.slice(0, 8).map(m => `
+        <div class="error-item">
+          <span class="err-type ${m.type === 'error' ? 'err-error' : 'err-warning'}">${m.type.toUpperCase()}</span>
+          Line ${m.line}: ${m.message}
+        </div>`).join('');
+      errorPanel.classList.add('visible');
+    } else {
+      clearErrors();
+    }
+  } catch (_) { clearErrors(); }
+}
+
+function clearErrors() {
+  errorBadge.classList.remove('visible');
+  errorPanel.classList.remove('visible');
+  errorList.innerHTML = '';
+}
+
+document.getElementById('closeErrors').addEventListener('click', () => {
+  errorPanel.classList.remove('visible');
+});
+
+// ─── Tabs ────────────────────────────────────────────────────────────────────
+document.querySelectorAll('.tab-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+    document.querySelectorAll('.editor-wrap').forEach(w => w.classList.remove('active'));
+    btn.classList.add('active');
+    document.getElementById('wrap-' + btn.dataset.tab).classList.add('active');
+    setTimeout(() => { htmlEditor.refresh(); cssEditor.refresh(); }, 10);
+  });
+});
+
+// ─── Challenge System ────────────────────────────────────────────────────────
+const challengePanel  = document.getElementById('challengePanel');
+const challengeTitle  = document.getElementById('challengeTitle');
+const challengeDesc   = document.getElementById('challengeDesc');
+const hintList        = document.getElementById('hintList');
+const challengeSelect = document.getElementById('challengeSelect');
+
+function loadChallenge(key, injectCode = false) {
+  const ch = CHALLENGES[key];
+  if (!ch) return;
+
+  challengeTitle.textContent = ch.title;
+  challengeDesc.innerHTML = ch.description;
+
+  hintList.innerHTML = '';
+  ch.hints.forEach((h, i) => {
+    const item = document.createElement('div');
+    item.className = 'hint-item';
+    item.innerHTML = `
+      <div class="hint-step">
+        <span class="step-num">${i + 1}</span>
+        ${h.label}
+      </div>
+      <pre class="hint-code">${escapeHTML(h.code)}</pre>
+      <button class="hint-apply-btn" data-hint="${i}">Apply ↗</button>`;
+
+    item.querySelector('.hint-step').addEventListener('click', () => {
+      item.classList.toggle('open');
+    });
+    item.querySelector('.hint-apply-btn').addEventListener('click', () => {
+      const current = cssEditor.getValue();
+      cssEditor.setValue(current + '\n' + h.code);
+      // switch to CSS tab
+      document.querySelector('[data-tab="css"]').click();
+    });
+    hintList.appendChild(item);
+  });
+
+  if (injectCode) {
+    htmlEditor.setValue(ch.html);
+    cssEditor.setValue(ch.css);
+    runPreview();
+  }
+}
+
+function escapeHTML(str) {
+  return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+}
+
+challengeSelect.addEventListener('change', () => {
+  loadChallenge(challengeSelect.value, false);
+  if (!challengePanel.classList.contains('hidden')) {
+    // already open, just update desc
+  }
+});
+
+document.getElementById('loadChallengeBtn').addEventListener('click', () => {
+  loadChallenge(challengeSelect.value, true);
+});
+
+// ─── Buttons ─────────────────────────────────────────────────────────────────
+document.getElementById('runBtn').addEventListener('click', runPreview);
+
+document.getElementById('resetBtn').addEventListener('click', () => {
+  loadChallenge(challengeSelect.value, true);
+});
+
+document.getElementById('challengeToggleBtn').addEventListener('click', () => {
+  const btn = document.getElementById('challengeToggleBtn');
+  challengePanel.classList.toggle('hidden');
+  btn.classList.toggle('active');
+  if (!challengePanel.classList.contains('hidden')) {
+    loadChallenge(challengeSelect.value, false);
+  }
+  setTimeout(refreshEditors, 300);
+});
+
+document.getElementById('hintBtn').addEventListener('click', () => {
+  // Open challenge panel and scroll to hints
+  challengePanel.classList.remove('hidden');
+  document.getElementById('challengeToggleBtn').classList.add('active');
+  loadChallenge(challengeSelect.value, false);
+  setTimeout(() => {
+    hintList.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    refreshEditors();
+  }, 100);
+});
+
+// ─── Horizontal Pane Resizer ─────────────────────────────────────────────────
+(function() {
+  const resizer     = document.getElementById('resizer');
+  const editorPane  = document.getElementById('editorPane');
+  const splitRow    = document.getElementById('splitRow');
+  let dragging = false, startX = 0, startW = 0;
+
+  resizer.addEventListener('mousedown', e => {
+    dragging = true;
+    startX = e.clientX;
+    startW = editorPane.getBoundingClientRect().width;
+    resizer.classList.add('dragging');
+    document.body.style.cursor = 'col-resize';
+    document.body.style.userSelect = 'none';
+  });
+
+  document.addEventListener('mousemove', e => {
+    if (!dragging) return;
+    const delta = e.clientX - startX;
+    const total = splitRow.getBoundingClientRect().width;
+    const newW  = Math.min(Math.max(startW + delta, 200), total - 200);
+    editorPane.style.width = newW + 'px';
+    editorPane.style.flex  = 'none';
+  });
+
+  document.addEventListener('mouseup', () => {
+    if (!dragging) return;
+    dragging = false;
+    resizer.classList.remove('dragging');
+    document.body.style.cursor = '';
+    document.body.style.userSelect = '';
+    refreshEditors();
+  });
+
+  // Touch support
+  resizer.addEventListener('touchstart', e => {
+    dragging = true;
+    startX = e.touches[0].clientX;
+    startW = editorPane.getBoundingClientRect().width;
+  }, { passive: true });
+
+  document.addEventListener('touchmove', e => {
+    if (!dragging) return;
+    const delta = e.touches[0].clientX - startX;
+    const total = splitRow.getBoundingClientRect().width;
+    const newW  = Math.min(Math.max(startW + delta, 200), total - 200);
+    editorPane.style.width = newW + 'px';
+    editorPane.style.flex  = 'none';
+  }, { passive: true });
+
+  document.addEventListener('touchend', () => {
+    dragging = false;
+    refreshEditors();
+  });
+})();
+
+// ─── Vertical (Challenge) Pane Resizer ───────────────────────────────────────
+(function() {
+  const vResizer  = document.getElementById('vResizer');
+  const chPanel   = document.getElementById('challengePanel');
+  const workspace = document.getElementById('workspace');
+  let dragging = false, startY = 0, startH = 0;
+
+  vResizer.addEventListener('mousedown', e => {
+    if (chPanel.classList.contains('hidden')) return;
+    dragging = true;
+    startY = e.clientY;
+    startH = chPanel.getBoundingClientRect().height;
+    vResizer.classList.add('dragging');
+    document.body.style.cursor = 'row-resize';
+    document.body.style.userSelect = 'none';
+  });
+
+  document.addEventListener('mousemove', e => {
+    if (!dragging) return;
+    const delta = startY - e.clientY;
+    const newH  = Math.min(Math.max(startH + delta, 100), 500);
+    chPanel.style.height = newH + 'px';
+  });
+
+  document.addEventListener('mouseup', () => {
+    if (!dragging) return;
+    dragging = false;
+    vResizer.classList.remove('dragging');
+    document.body.style.cursor = '';
+    document.body.style.userSelect = '';
+    refreshEditors();
+  });
+})();
+
+// ─── Init ────────────────────────────────────────────────────────────────────
+loadChallenge('blank', true);
+
+// Put vResizer BEFORE challengePanel in DOM order (it's between splitRow and challengePanel)
+(function reorderDOM() {
+  const ws = document.getElementById('workspace');
+  const sr = document.getElementById('splitRow');
+  const vr = document.getElementById('vResizer');
+  const cp = document.getElementById('challengePanel');
+  // Already ordered correctly in HTML; just ensure it
+  ws.appendChild(sr);
+  ws.appendChild(vr);
+  ws.appendChild(cp);
+})();
+</script>
+</body>
+</html>
