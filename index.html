@@ -19,12 +19,7 @@
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/addon/lint/lint.min.css" />
   <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/addon/comment/comment.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/addon/selection/active-line.min.js"></script>
-  <!-- Autocomplete -->
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/addon/hint/show-hint.min.css" />
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/addon/hint/show-hint.min.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/addon/hint/css-hint.min.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/addon/hint/xml-hint.min.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/addon/hint/html-hint.min.js"></script>
+  <!-- No external hint addons — autocomplete is fully custom (see JS) -->
   <!-- CSS Lint for error checking -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/csslint/1.0.5/csslint.min.js"></script>
 
@@ -489,27 +484,66 @@
     .err-error { background: #f38ba820; color: var(--error); }
     .err-warning { background: #f9e2af20; color: var(--warn); }
 
-    /* ─── Autocomplete Dropdown ──────────────────────────── */
-    .CodeMirror-hints {
-      background: #1e1e2e !important;
-      border: 1px solid #45475a !important;
-      border-radius: 8px !important;
-      box-shadow: 0 8px 32px #000a !important;
-      padding: 4px !important;
-      font-family: 'Cascadia Code','Fira Code','JetBrains Mono',Consolas,monospace !important;
-      font-size: 13px !important;
-      z-index: 9999 !important;
-      max-height: 220px !important;
+    /* ─── Custom Autocomplete Popup ─────────────────────── */
+    #ac-popup {
+      display: none;
+      position: fixed;
+      z-index: 9999;
+      background: #1e1e2e;
+      border: 1px solid #45475a;
+      border-radius: 8px;
+      box-shadow: 0 8px 32px rgba(0,0,0,.65);
+      overflow: hidden;
+      min-width: 180px;
+      max-width: 320px;
     }
-    .CodeMirror-hint {
-      padding: 4px 10px !important;
-      border-radius: 5px !important;
-      color: #cdd6f4 !important;
-      white-space: pre !important;
+    #ac-list {
+      max-height: 210px;
+      overflow-y: auto;
+      padding: 4px;
+      scrollbar-width: thin;
+      scrollbar-color: #45475a transparent;
     }
-    .CodeMirror-hint-active {
-      background: #313244 !important;
-      color: #89b4fa !important;
+    .ac-item {
+      padding: 5px 10px;
+      border-radius: 5px;
+      font-family: 'Cascadia Code','Fira Code','JetBrains Mono',Consolas,monospace;
+      font-size: 12.5px;
+      color: #cdd6f4;
+      cursor: pointer;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      display: flex;
+      align-items: center;
+      gap: 7px;
+    }
+    .ac-item:hover, .ac-item.ac-active {
+      background: #313244;
+      color: #89b4fa;
+    }
+    .ac-type {
+      font-size: .65rem;
+      padding: 1px 5px;
+      border-radius: 3px;
+      flex-shrink: 0;
+      font-style: normal;
+      font-weight: 700;
+      letter-spacing: .3px;
+    }
+    .ac-type-prop  { background: #89b4fa22; color: #89b4fa; }
+    .ac-type-value { background: #a6e3a122; color: #a6e3a1; }
+    .ac-type-tag   { background: #f38ba822; color: #f38ba8; }
+    .ac-type-attr  { background: #fab38722; color: #fab387; }
+    .ac-type-fn    { background: #cba6f722; color: #cba6f7; }
+    .ac-type-pseudo{ background: #f9e2af22; color: #f9e2af; }
+    #ac-footer {
+      padding: 4px 10px 5px;
+      font-size: .68rem;
+      color: #585b70;
+      border-top: 1px solid #313244;
+      display: flex;
+      gap: 10px;
     }
 
     /* ─── Scrollbars ──────────────────────────────────────── */
@@ -672,6 +706,12 @@
 
   </div>
 
+</div>
+
+<!-- Custom Autocomplete Popup -->
+<div id="ac-popup">
+  <div id="ac-list"></div>
+  <div id="ac-footer"><span>↑↓ navigate</span><span>↵ / Tab apply</span><span>Esc close</span></div>
 </div>
 
 <!-- Error Panel -->
@@ -1184,11 +1224,417 @@ footer { background: #1a1a2e; color: #888; }`,
   },
 };
 
+// ─── Autocomplete Data ───────────────────────────────────────────────────────
+const AC = {
+  cssProps: [
+    'align-content','align-items','align-self','animation','animation-delay',
+    'animation-direction','animation-duration','animation-fill-mode',
+    'animation-iteration-count','animation-name','animation-play-state',
+    'animation-timing-function','appearance','backdrop-filter','background',
+    'background-attachment','background-blend-mode','background-clip',
+    'background-color','background-image','background-origin','background-position',
+    'background-repeat','background-size','border','border-bottom','border-bottom-color',
+    'border-bottom-left-radius','border-bottom-right-radius','border-bottom-style',
+    'border-bottom-width','border-collapse','border-color','border-left',
+    'border-left-color','border-left-style','border-left-width','border-radius',
+    'border-right','border-right-color','border-right-style','border-right-width',
+    'border-style','border-top','border-top-color','border-top-left-radius',
+    'border-top-right-radius','border-top-style','border-top-width','border-width',
+    'bottom','box-shadow','box-sizing','clear','clip-path','color','column-count',
+    'column-gap','column-rule','columns','content','cursor','direction','display',
+    'filter','flex','flex-basis','flex-direction','flex-flow','flex-grow',
+    'flex-shrink','flex-wrap','float','font','font-family','font-size','font-style',
+    'font-variant','font-weight','gap','grid','grid-area','grid-auto-columns',
+    'grid-auto-flow','grid-auto-rows','grid-column','grid-column-end',
+    'grid-column-start','grid-row','grid-row-end','grid-row-start','grid-template',
+    'grid-template-areas','grid-template-columns','grid-template-rows','height',
+    'inset','isolation','justify-content','justify-items','justify-self','left',
+    'letter-spacing','line-height','list-style','list-style-position',
+    'list-style-type','margin','margin-bottom','margin-left','margin-right',
+    'margin-top','max-height','max-width','min-height','min-width','mix-blend-mode',
+    'object-fit','object-position','opacity','order','outline','outline-color',
+    'outline-offset','outline-style','outline-width','overflow','overflow-x',
+    'overflow-y','padding','padding-bottom','padding-left','padding-right',
+    'padding-top','place-content','place-items','place-self','pointer-events',
+    'position','resize','right','rotate','row-gap','scale','scroll-behavior',
+    'table-layout','text-align','text-decoration','text-decoration-color',
+    'text-decoration-line','text-decoration-style','text-indent','text-overflow',
+    'text-shadow','text-transform','top','transform','transform-origin',
+    'transform-style','transition','transition-delay','transition-duration',
+    'transition-property','transition-timing-function','translate','user-select',
+    'vertical-align','visibility','white-space','width','will-change','word-break',
+    'word-spacing','writing-mode','z-index',
+  ],
+  cssValues: {
+    'display':['block','inline','inline-block','flex','inline-flex','grid','inline-grid','none','table','table-cell','table-row','contents','flow-root','list-item'],
+    'position':['static','relative','absolute','fixed','sticky'],
+    'flex-direction':['row','row-reverse','column','column-reverse'],
+    'flex-wrap':['nowrap','wrap','wrap-reverse'],
+    'justify-content':['flex-start','flex-end','center','space-between','space-around','space-evenly','start','end','stretch'],
+    'align-items':['flex-start','flex-end','center','baseline','stretch','start','end'],
+    'align-content':['flex-start','flex-end','center','space-between','space-around','space-evenly','stretch'],
+    'align-self':['auto','flex-start','flex-end','center','baseline','stretch'],
+    'overflow':['visible','hidden','scroll','auto','clip'],
+    'overflow-x':['visible','hidden','scroll','auto'],
+    'overflow-y':['visible','hidden','scroll','auto'],
+    'cursor':['default','pointer','text','move','not-allowed','grab','grabbing','none','crosshair','help','wait','progress','zoom-in','zoom-out','e-resize','w-resize','n-resize','s-resize','col-resize','row-resize'],
+    'visibility':['visible','hidden','collapse'],
+    'font-weight':['normal','bold','bolder','lighter','100','200','300','400','500','600','700','800','900'],
+    'font-style':['normal','italic','oblique'],
+    'text-align':['left','right','center','justify','start','end'],
+    'text-transform':['none','uppercase','lowercase','capitalize','full-width'],
+    'text-decoration':['none','underline','overline','line-through'],
+    'text-overflow':['clip','ellipsis'],
+    'white-space':['normal','nowrap','pre','pre-wrap','pre-line','break-spaces'],
+    'word-break':['normal','break-all','keep-all','break-word'],
+    'box-sizing':['content-box','border-box'],
+    'float':['left','right','none','inline-start','inline-end'],
+    'clear':['none','left','right','both'],
+    'vertical-align':['baseline','top','middle','bottom','text-top','text-bottom','sub','super'],
+    'background-repeat':['repeat','no-repeat','repeat-x','repeat-y','round','space'],
+    'background-size':['auto','cover','contain'],
+    'background-attachment':['scroll','fixed','local'],
+    'border-style':['none','solid','dashed','dotted','double','groove','ridge','inset','outset','hidden'],
+    'outline-style':['none','solid','dashed','dotted','double','groove','ridge','inset','outset'],
+    'object-fit':['fill','contain','cover','none','scale-down'],
+    'pointer-events':['auto','none'],
+    'resize':['none','both','horizontal','vertical'],
+    'user-select':['auto','text','none','all','contain'],
+    'list-style-type':['none','disc','circle','square','decimal','lower-alpha','upper-alpha','lower-roman','upper-roman'],
+    'will-change':['auto','scroll-position','contents','transform','opacity'],
+    'mix-blend-mode':['normal','multiply','screen','overlay','darken','lighten','color-dodge','color-burn','hard-light','soft-light','difference','exclusion','hue','saturation','color','luminosity'],
+    'isolation':['auto','isolate'],
+    'transform':['none','translateX()','translateY()','translate()','scaleX()','scaleY()','scale()','rotate()','rotateX()','rotateY()','skewX()','skewY()','matrix()','perspective()'],
+    'transition-timing-function':['ease','linear','ease-in','ease-out','ease-in-out','step-start','step-end','cubic-bezier()'],
+    'animation-timing-function':['ease','linear','ease-in','ease-out','ease-in-out','step-start','step-end'],
+    'animation-fill-mode':['none','forwards','backwards','both'],
+    'animation-direction':['normal','reverse','alternate','alternate-reverse'],
+    'animation-play-state':['running','paused'],
+    'appearance':['none','auto'],
+    'scroll-behavior':['auto','smooth'],
+    'writing-mode':['horizontal-tb','vertical-rl','vertical-lr'],
+    'grid-auto-flow':['row','column','dense','row dense','column dense'],
+    'table-layout':['auto','fixed'],
+    'border-collapse':['collapse','separate'],
+    'caption-side':['top','bottom'],
+    'empty-cells':['show','hide'],
+  },
+  cssFunctions: [
+    'rgb()','rgba()','hsl()','hsla()','hwb()','oklch()','lch()',
+    'linear-gradient()','radial-gradient()','conic-gradient()',
+    'repeating-linear-gradient()','repeating-radial-gradient()',
+    'url()','calc()','var()','clamp()','min()','max()','env()',
+    'translateX()','translateY()','translate()','translate3d()',
+    'rotate()','rotateX()','rotateY()','rotateZ()','rotate3d()',
+    'scale()','scaleX()','scaleY()','scale3d()',
+    'skewX()','skewY()','skew()','matrix()','matrix3d()','perspective()',
+    'blur()','brightness()','contrast()','drop-shadow()','grayscale()',
+    'hue-rotate()','invert()','opacity()','saturate()','sepia()',
+    'polygon()','circle()','ellipse()','inset()','path()',
+    'counter()','counters()','attr()','format()','local()',
+  ],
+  cssPseudos: [
+    ':hover',':focus',':focus-within',':focus-visible',':active',
+    ':visited',':link',':any-link',':local-link',
+    ':first-child',':last-child',':only-child',
+    ':first-of-type',':last-of-type',':only-of-type',
+    ':nth-child()',':nth-last-child()',':nth-of-type()',':nth-last-of-type()',
+    ':checked',':indeterminate',':disabled',':enabled',':read-only',':read-write',
+    ':required',':optional',':valid',':invalid',':in-range',':out-of-range',
+    ':empty',':root',':target',':not()',':is()',':where()',':has()',
+    '::before','::after','::placeholder','::selection','::first-line','::first-letter',
+    '::marker','::backdrop','::file-selector-button',
+  ],
+  cssAtRules: [
+    '@media','@keyframes','@import','@font-face','@supports','@charset',
+    '@layer','@container','@property','@counter-style',
+  ],
+  htmlTags: [
+    'a','abbr','address','article','aside','audio','b','blockquote','body',
+    'br','button','canvas','caption','cite','code','col','colgroup','data',
+    'datalist','dd','del','details','dfn','dialog','div','dl','dt','em',
+    'embed','fieldset','figcaption','figure','footer','form',
+    'h1','h2','h3','h4','h5','h6','head','header','hr','html',
+    'i','iframe','img','input','ins','kbd','label','legend','li','link',
+    'main','map','mark','menu','meta','meter','nav','noscript',
+    'object','ol','optgroup','option','output','p','picture','pre',
+    'progress','q','s','samp','script','section','select','small',
+    'source','span','strong','style','sub','summary','sup','svg',
+    'table','tbody','td','template','textarea','tfoot','th','thead',
+    'time','title','tr','track','u','ul','var','video','wbr',
+  ],
+  htmlAttrs: {
+    _global: ['class','id','style','title','lang','dir','tabindex','hidden',
+      'role','data-','aria-label','aria-hidden','aria-disabled','aria-expanded',
+      'aria-controls','aria-selected','aria-required','aria-live',
+      'contenteditable','draggable','spellcheck','translate','accesskey'],
+    a:        ['href','target','rel','download','type','hreflang'],
+    img:      ['src','alt','width','height','loading','decoding','srcset','sizes'],
+    input:    ['type','name','value','placeholder','required','disabled','readonly',
+                'checked','min','max','step','pattern','autocomplete','autofocus',
+                'multiple','form','list','accept','capture','inputmode'],
+    button:   ['type','name','value','disabled','form','formaction','formmethod'],
+    form:     ['action','method','enctype','target','novalidate','autocomplete'],
+    label:    ['for'],
+    select:   ['name','multiple','required','disabled','size','form'],
+    textarea: ['name','rows','cols','placeholder','required','disabled','readonly',
+                'maxlength','minlength','wrap','form','spellcheck'],
+    video:    ['src','autoplay','controls','loop','muted','poster','width','height','preload','crossorigin'],
+    audio:    ['src','autoplay','controls','loop','muted','preload','crossorigin'],
+    iframe:   ['src','width','height','frameborder','allowfullscreen','sandbox','title','loading','referrerpolicy'],
+    meta:     ['name','content','charset','http-equiv','property'],
+    link:     ['rel','href','type','media','crossorigin','integrity','as'],
+    script:   ['src','type','async','defer','crossorigin','integrity','nomodule'],
+    td:       ['colspan','rowspan','headers'],
+    th:       ['colspan','rowspan','scope','headers'],
+    source:   ['src','srcset','type','media','sizes'],
+    track:    ['src','kind','label','srclang','default'],
+    col:      ['span'],
+    colgroup: ['span'],
+    area:     ['href','alt','shape','coords','target','rel','download'],
+    map:      ['name'],
+    details:  ['open'],
+    dialog:   ['open'],
+    object:   ['data','type','width','height','name','form'],
+    progress: ['value','max'],
+    meter:    ['value','min','max','low','high','optimum','form'],
+    time:     ['datetime'],
+    data:     ['value'],
+    ins:      ['cite','datetime'],
+    del:      ['cite','datetime'],
+    blockquote: ['cite'],
+    q:        ['cite'],
+  },
+  htmlInputTypes: ['text','email','password','number','tel','url','search','date',
+    'datetime-local','time','month','week','color','range','file','checkbox',
+    'radio','submit','reset','button','image','hidden'],
+};
+
+// ─── Custom Autocomplete Engine ───────────────────────────────────────────────
+const acPopup = document.getElementById('ac-popup');
+const acList  = document.getElementById('ac-list');
+let acState = null; // { cm, items, from, to, sel }
+
+function acClose() {
+  acPopup.style.display = 'none';
+  acState = null;
+}
+
+function acRender() {
+  if (!acState) return;
+  const { items, sel } = acState;
+  acList.innerHTML = '';
+  const limit = Math.min(items.length, 12);
+  for (let i = 0; i < limit; i++) {
+    const { text, type } = items[i];
+    const el = document.createElement('div');
+    el.className = 'ac-item' + (i === sel ? ' ac-active' : '');
+    el.innerHTML = `<em class="ac-type ac-type-${type}">${type}</em>${escapeAC(text)}`;
+    el.addEventListener('mousedown', e => { e.preventDefault(); acApply(i); });
+    el.addEventListener('mouseover',  () => { acState.sel = i; acRender(); });
+    acList.appendChild(el);
+  }
+  // Scroll selected into view
+  const active = acList.querySelector('.ac-active');
+  if (active) active.scrollIntoView({ block: 'nearest' });
+}
+
+function escapeAC(s) {
+  return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
+function acApply(idx) {
+  if (!acState) return;
+  const { cm, items, from, to } = acState;
+  const idx2 = idx !== undefined ? idx : acState.sel;
+  if (idx2 < 0 || idx2 >= items.length) { acClose(); return; }
+  const text = items[idx2].text;
+  cm.replaceRange(text, from, to);
+  // For function completions, place cursor between the parens
+  if (text.endsWith('()')) {
+    const cur = cm.getCursor();
+    cm.setCursor({ line: cur.line, ch: cur.ch - 1 });
+  }
+  acClose();
+  cm.focus();
+}
+
+function acMove(dir) {
+  if (!acState) return;
+  const max = Math.min(acState.items.length, 12);
+  acState.sel = (acState.sel + dir + max) % max;
+  acRender();
+}
+
+function acShow(cm, items, from, to) {
+  if (!items.length) { acClose(); return; }
+  acState = { cm, items, from, to, sel: 0 };
+  acRender();
+  // Position near cursor
+  const coords = cm.charCoords(from, 'page');
+  const ww = window.innerWidth, wh = window.innerHeight;
+  acPopup.style.display = 'block';
+  const pw = acPopup.offsetWidth, ph = acPopup.offsetHeight;
+  let left = coords.left;
+  let top  = coords.bottom + 2;
+  if (left + pw > ww - 8) left = ww - pw - 8;
+  if (top + ph  > wh - 8) top  = coords.top - ph - 2;
+  acPopup.style.left = left + 'px';
+  acPopup.style.top  = top  + 'px';
+}
+
+// ─── Context-aware completion logic ──────────────────────────────────────────
+
+function getCSSCompletions(cm) {
+  const cursor = cm.getCursor();
+  const line   = cm.getLine(cursor.line);
+  const before = line.slice(0, cursor.ch);
+
+  // Inside a CSS comment — skip
+  if (/\/\*/.test(before) && !/\*\//.test(before.split('/*').pop())) return null;
+
+  // After a ':' → value context
+  const valueMatch = before.match(/^\s*([\w-]+)\s*:\s*([\w%-]*(?:\s[\w%-]*)?)$/);
+  if (valueMatch) {
+    const prop   = valueMatch[1].toLowerCase();
+    const vRaw   = valueMatch[2];
+    const parts  = vRaw.split(/\s+/);
+    const prefix = parts[parts.length - 1];
+    const from   = { line: cursor.line, ch: cursor.ch - prefix.length };
+    const pool   = AC.cssValues[prop] || AC.cssValues[prop.replace(/^-(webkit|moz|ms)-/, '')] || [];
+    // Merge with general keywords
+    const all    = [...new Set([...pool, 'inherit','initial','unset','revert','auto'])];
+    const fns    = AC.cssFunctions;
+    const items  = [
+      ...all.filter(v => v.startsWith(prefix)).map(v => ({ text: v, type: 'value' })),
+      ...fns.filter(f => f.startsWith(prefix)).map(f => ({ text: f, type: 'fn' })),
+    ];
+    return items.length ? { items, from, to: cursor } : null;
+  }
+
+  // After '(' inside a value (function args) — offer colors and keywords
+  if (/:\s*[\w-]+\([^)]*$/.test(before)) return null;
+
+  // At-rule
+  const atMatch = before.match(/@([\w-]*)$/);
+  if (atMatch) {
+    const prefix = '@' + atMatch[1];
+    const items  = AC.cssAtRules
+      .filter(a => a.startsWith(prefix))
+      .map(a => ({ text: a, type: 'prop' }));
+    return items.length ? { items, from: { line: cursor.line, ch: cursor.ch - prefix.length }, to: cursor } : null;
+  }
+
+  // Pseudo-class / pseudo-element
+  const pseudoMatch = before.match(/:{1,2}([\w-]*)$/);
+  if (pseudoMatch) {
+    const pfx    = before.endsWith('::') ? '::' : before.endsWith(':') ? ':' : ':';
+    const typed  = pseudoMatch[1];
+    const full   = pfx + typed;
+    const from   = { line: cursor.line, ch: cursor.ch - full.length };
+    const items  = AC.cssPseudos
+      .filter(p => p.startsWith(pfx + typed))
+      .map(p => ({ text: p, type: 'pseudo' }));
+    return items.length ? { items, from, to: cursor } : null;
+  }
+
+  // CSS property name (general token)
+  const propMatch = before.match(/(?:^|\{|\s)([\w-]*)$/);
+  if (propMatch) {
+    const prefix = propMatch[1];
+    if (!prefix) return null;
+    const from   = { line: cursor.line, ch: cursor.ch - prefix.length };
+    const items  = AC.cssProps
+      .filter(p => p.startsWith(prefix))
+      .map(p => ({ text: p + ': ', type: 'prop' }));
+    return items.length ? { items, from, to: cursor } : null;
+  }
+
+  return null;
+}
+
+function getHTMLCompletions(cm) {
+  const cursor = cm.getCursor();
+  const line   = cm.getLine(cursor.line);
+  const before = line.slice(0, cursor.ch);
+
+  // Inside a string attribute value (e.g. type="|")
+  const typeValMatch = before.match(/\btype=["']?([\w-]*)$/);
+  if (typeValMatch) {
+    const prefix = typeValMatch[1];
+    const from   = { line: cursor.line, ch: cursor.ch - prefix.length };
+    const items  = AC.htmlInputTypes
+      .filter(t => t.startsWith(prefix))
+      .map(t => ({ text: t, type: 'value' }));
+    return items.length ? { items, from, to: cursor } : null;
+  }
+
+  // Opening tag: <tag or inside a tag for attributes
+  // Detect current open tag context
+  const tagCtx = before.match(/<([\w-]+)([^>]*)$/);
+  if (tagCtx) {
+    const tagName = tagCtx[1].toLowerCase();
+    // Attribute name context (after whitespace inside a tag)
+    const attrMatch = before.match(/\s([\w-]*)$/);
+    if (attrMatch) {
+      const prefix = attrMatch[1];
+      const from   = { line: cursor.line, ch: cursor.ch - prefix.length };
+      const specific = AC.htmlAttrs[tagName] || [];
+      const global   = AC.htmlAttrs._global;
+      const all      = [...new Set([...specific, ...global])];
+      const items    = all
+        .filter(a => a.startsWith(prefix))
+        .map(a => ({ text: a, type: 'attr' }));
+      return items.length ? { items, from, to: cursor } : null;
+    }
+  }
+
+  // Tag name: < or </
+  const tagMatch = before.match(/<\/?([a-zA-Z][\w-]*)$/);
+  if (tagMatch) {
+    const prefix  = tagMatch[1];
+    const isClose = before.match(/<\//);
+    const from    = { line: cursor.line, ch: cursor.ch - prefix.length };
+    const items   = AC.htmlTags
+      .filter(t => t.startsWith(prefix.toLowerCase()))
+      .map(t => ({ text: t, type: 'tag' }));
+    return items.length ? { items, from, to: cursor } : null;
+  }
+
+  // Just typed '<'
+  if (before.endsWith('<') || before.endsWith('</')) {
+    const from = { line: cursor.line, ch: cursor.ch };
+    const items = AC.htmlTags.map(t => ({ text: t, type: 'tag' }));
+    return { items, from, to: cursor };
+  }
+
+  return null;
+}
+
 // ─── CodeMirror Editors ──────────────────────────────────────────────────────
 const sharedKeys = {
   'Ctrl-/':     'toggleComment',
   'Cmd-/':      'toggleComment',
-  'Ctrl-Space': 'autocomplete',
+  'Ctrl-Space': cm => { triggerAC(cm, true); },
+  'Tab': cm => {
+    if (acState) { acApply(); return; }
+    cm.execCommand('indentMore');
+  },
+  'Up': cm => {
+    if (acState) { acMove(-1); return; }
+    cm.execCommand('goLineUp');
+  },
+  'Down': cm => {
+    if (acState) { acMove(1); return; }
+    cm.execCommand('goLineDown');
+  },
+  'Enter': cm => {
+    if (acState) { acApply(); return; }
+    cm.execCommand('newlineAndIndent');
+  },
+  'Esc': cm => {
+    if (acState) { acClose(); return; }
+  },
 };
 
 const htmlEditor = CodeMirror.fromTextArea(document.getElementById('htmlEditor'), {
@@ -1202,7 +1648,6 @@ const htmlEditor = CodeMirror.fromTextArea(document.getElementById('htmlEditor')
   tabSize: 2,
   indentWithTabs: false,
   extraKeys: sharedKeys,
-  hintOptions: { completeSingle: false, alignWithWord: true },
 });
 
 const cssEditor = CodeMirror.fromTextArea(document.getElementById('cssEditor'), {
@@ -1216,34 +1661,40 @@ const cssEditor = CodeMirror.fromTextArea(document.getElementById('cssEditor'), 
   tabSize: 2,
   indentWithTabs: false,
   extraKeys: sharedKeys,
-  hintOptions: { completeSingle: false, alignWithWord: true },
 });
 
-// ─── Auto-trigger autocomplete on input ──────────────────────────────────────
-let hintDebounce = null;
+// ─── Auto-trigger on every keypress ──────────────────────────────────────────
+let acDebounce = null;
 
-function triggerHint(cm) {
-  clearTimeout(hintDebounce);
-  hintDebounce = setTimeout(() => {
-    if (cm.state.completionActive) return; // already open
-    const cursor = cm.getCursor();
-    const token  = cm.getTokenAt(cursor);
-    // Only trigger when the user typed a real character (not whitespace / newline)
-    if (token.string && /[a-zA-Z0-9\-:#\.@]/.test(token.string.slice(-1))) {
-      cm.showHint({ completeSingle: false });
+function triggerAC(cm, force = false) {
+  clearTimeout(acDebounce);
+  acDebounce = setTimeout(() => {
+    const mode = cm.getMode().name;
+    let result = null;
+    if (mode === 'css') result = getCSSCompletions(cm);
+    else                result = getHTMLCompletions(cm);
+    if (result) {
+      acShow(cm, result.items, result.from, result.to);
+    } else if (!force) {
+      acClose();
     }
-  }, 180);
+  }, force ? 0 : 200);
 }
 
-htmlEditor.on('inputRead', (cm, change) => {
-  if (change.origin !== '+input') return;
-  triggerHint(cm);
+htmlEditor.on('change', (cm, ch) => {
+  if (ch.origin === '+delete' || ch.origin === 'undo' || ch.origin === 'redo') { acClose(); return; }
+  triggerAC(cm);
+});
+cssEditor.on('change', (cm, ch) => {
+  if (ch.origin === '+delete' || ch.origin === 'undo' || ch.origin === 'redo') { acClose(); return; }
+  triggerAC(cm);
 });
 
-cssEditor.on('inputRead', (cm, change) => {
-  if (change.origin !== '+input') return;
-  triggerHint(cm);
-});
+// Close popup when editor loses focus or cursor moves away
+htmlEditor.on('blur',        acClose);
+cssEditor.on( 'blur',        acClose);
+htmlEditor.on('cursorActivity', () => { if (acState) triggerAC(htmlEditor); });
+cssEditor.on( 'cursorActivity', () => { if (acState) triggerAC(cssEditor); });
 
 // Fix CodeMirror size after init
 function refreshEditors() {
