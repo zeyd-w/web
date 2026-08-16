@@ -1,2005 +1,748 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>CSS Practice Playground</title>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>CSS Practice Playground</title>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/codemirror.min.css"/>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/theme/dracula.min.css"/>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/codemirror.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/mode/css/css.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/mode/xml/xml.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/mode/javascript/javascript.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/mode/htmlmixed/htmlmixed.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/addon/edit/closebrackets.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/addon/edit/matchbrackets.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/addon/selection/active-line.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/addon/comment/comment.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/csslint/1.0.5/csslint.min.js"></script>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#1e1e2e;--bg2:#181825;--bg3:#11111b;--bg4:#313244;
+  --border:#313244;--text:#cdd6f4;--muted:#6c7086;
+  --blue:#89b4fa;--purple:#cba6f7;--green:#a6e3a1;
+  --peach:#fab387;--red:#f38ba8;--yellow:#f9e2af;
+  --r:6px;--th:48px;--tabh:36px;
+}
+html,body{height:100%;font-family:'Segoe UI',system-ui,sans-serif;background:var(--bg);color:var(--text);overflow:hidden}
+#app{display:flex;flex-direction:column;height:100vh}
 
-  <!-- CodeMirror 5 -->
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/codemirror.min.css" />
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/theme/dracula.min.css" />
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/codemirror.min.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/mode/css/css.min.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/mode/htmlmixed/htmlmixed.min.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/mode/xml/xml.min.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/mode/javascript/javascript.min.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/addon/edit/closebrackets.min.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/addon/edit/matchbrackets.min.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/addon/lint/lint.js"></script>
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/addon/lint/lint.min.css" />
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/addon/comment/comment.min.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/addon/selection/active-line.min.js"></script>
-  <!-- No external hint addons — autocomplete is fully custom (see JS) -->
-  <!-- CSS Lint for error checking -->
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/csslint/1.0.5/csslint.min.js"></script>
+/* toolbar */
+#toolbar{height:var(--th);min-height:var(--th);background:var(--bg3);border-bottom:1px solid var(--border);
+  display:flex;align-items:center;gap:8px;padding:0 12px;flex-shrink:0}
+.logo{font-size:.95rem;font-weight:800;color:var(--blue);white-space:nowrap}
+.logo span{color:var(--purple)}
+.sep{width:1px;height:20px;background:var(--border);flex-shrink:0}
+#csel{flex:1 1 160px;max-width:260px;min-width:100px;background:var(--bg4);color:var(--text);
+  border:1px solid var(--border);border-radius:var(--r);padding:4px 8px;font-size:.82rem;cursor:pointer;outline:none}
+#csel:focus{border-color:var(--blue)}
+.btn{height:28px;padding:0 12px;border:none;border-radius:var(--r);font-size:.8rem;font-weight:600;
+  cursor:pointer;white-space:nowrap;flex-shrink:0;transition:opacity .15s,transform .1s}
+.btn:active{transform:scale(.95)}.btn:hover{opacity:.82}
+.brun{background:var(--green);color:#1e1e2e}
+.breset{background:var(--bg4);color:var(--text);border:1px solid var(--border)}
+.bhint{background:var(--peach);color:#1e1e2e}
+.bchal{background:var(--bg4);color:var(--text);border:1px solid var(--border)}
+.bchal.on{border-color:var(--purple);color:var(--purple)}
+#errBadge{display:none;background:var(--red);color:#1e1e2e;font-size:.7rem;font-weight:700;
+  padding:2px 7px;border-radius:99px;white-space:nowrap;flex-shrink:0}
+#errBadge.on{display:block}
 
-  <style>
-    /* ─── Reset & Base ────────────────────────────────────── */
-    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+/* work area */
+#work{flex:1 1 0;display:flex;flex-direction:column;overflow:hidden;min-height:0}
+#split{flex:1 1 0;display:flex;overflow:hidden;min-height:0}
 
-    :root {
-      --bg-app:        #1e1e2e;
-      --bg-panel:      #181825;
-      --bg-tab:        #313244;
-      --bg-tab-active: #1e1e2e;
-      --bg-toolbar:    #11111b;
-      --bg-challenge:  #181825;
-      --accent:        #89b4fa;
-      --accent2:       #cba6f7;
-      --accent3:       #a6e3a1;
-      --accent4:       #fab387;
-      --text:          #cdd6f4;
-      --text-muted:    #6c7086;
-      --border:        #313244;
-      --error:         #f38ba8;
-      --warn:          #f9e2af;
-      --radius:        6px;
-      --toolbar-h:     48px;
-      --challenge-h:   220px;
-      --tab-h:         36px;
-      --resizer-w:     5px;
-    }
+/* editor pane */
+#edPane{width:50%;min-width:200px;display:flex;flex-direction:column;background:var(--bg2);
+  border-right:1px solid var(--border);overflow:hidden}
+.tabbar{display:flex;background:var(--bg3);border-bottom:1px solid var(--border);height:var(--tabh);flex-shrink:0}
+.tab{height:var(--tabh);padding:0 16px;background:none;border:none;color:var(--muted);font-size:.8rem;
+  font-weight:600;cursor:pointer;border-bottom:2px solid transparent;transition:color .2s,border-color .2s}
+.tab:hover{color:var(--text)}.tab.on{color:var(--blue);border-bottom-color:var(--blue)}
+.ewrap{display:none;flex:1 1 0;flex-direction:column;overflow:hidden;min-height:0}
+.ewrap.on{display:flex}
+.CodeMirror{flex:1 1 0;height:100%!important;font-size:13.5px;line-height:1.65;
+  font-family:'Cascadia Code','Fira Code','JetBrains Mono',Consolas,monospace}
+.CodeMirror-scroll{height:100%}
 
-    html, body {
-      height: 100%;
-      font-family: 'Segoe UI', system-ui, sans-serif;
-      background: var(--bg-app);
-      color: var(--text);
-      overflow: hidden;
-    }
+/* resizers */
+#hres{width:5px;min-width:5px;cursor:col-resize;background:var(--border);z-index:10;transition:background .2s}
+#hres:hover,#hres.d{background:var(--blue)}
+#vres{height:5px;min-height:5px;cursor:row-resize;background:var(--border);z-index:10;
+  transition:background .2s;display:none;flex-shrink:0}
+#vres.show{display:block}
+#vres:hover,#vres.d{background:var(--purple)}
 
-    /* ─── App Shell ───────────────────────────────────────── */
-    #app {
-      display: flex;
-      flex-direction: column;
-      height: 100vh;
-    }
+/* preview pane */
+#prevPane{flex:1 1 0;min-width:200px;display:flex;flex-direction:column;background:var(--bg2);overflow:hidden}
+.panehdr{height:var(--tabh);background:var(--bg3);border-bottom:1px solid var(--border);
+  display:flex;align-items:center;padding:0 12px;gap:7px;font-size:.75rem;color:var(--muted);
+  font-weight:600;text-transform:uppercase;letter-spacing:.4px;flex-shrink:0}
+.dot{width:7px;height:7px;border-radius:50%;background:var(--green);flex-shrink:0}
+#prevFrame{flex:1 1 0;border:none;background:#fff;min-height:0}
 
-    /* ─── Toolbar ─────────────────────────────────────────── */
-    #toolbar {
-      height: var(--toolbar-h);
-      min-height: var(--toolbar-h);
-      background: var(--bg-toolbar);
-      border-bottom: 1px solid var(--border);
-      display: flex;
-      align-items: center;
-      gap: 10px;
-      padding: 0 14px;
-      flex-wrap: nowrap;
-      overflow: hidden;
-    }
+/* challenge panel */
+#chalPanel{height:220px;min-height:80px;background:var(--bg2);border-top:1px solid var(--border);
+  display:none;flex-direction:column;overflow:hidden;flex-shrink:0}
+#chalPanel.on{display:flex}
+.chalHdr{height:34px;background:var(--bg3);border-bottom:1px solid var(--border);
+  display:flex;align-items:center;padding:0 12px;gap:8px;flex-shrink:0}
+.chalHdr h3{font-size:.78rem;color:var(--purple);text-transform:uppercase;letter-spacing:.4px;flex:1}
+.chalBody{flex:1 1 0;display:flex;overflow:hidden;min-height:0}
+.chalDesc{flex:1 1 0;padding:12px 16px;overflow-y:auto;font-size:.83rem;line-height:1.65;scrollbar-width:thin}
+.chalDesc h4{color:var(--blue);margin-bottom:5px;font-size:.87rem}
+.chalDesc ul{padding-left:16px}
+.chalDesc li{margin-bottom:3px}
+.chalDesc code{background:var(--bg4);padding:1px 5px;border-radius:3px;font-family:monospace;font-size:.8rem;color:var(--peach)}
+.badge{display:inline-block;padding:1px 8px;border-radius:99px;font-size:.7rem;font-weight:700;margin-bottom:7px}
+.easy{background:#a6e3a115;color:var(--green);border:1px solid var(--green)}
+.med{background:#f9e2af15;color:var(--yellow);border:1px solid var(--yellow)}
+.hard{background:#f38ba815;color:var(--red);border:1px solid var(--red)}
+.hints{width:270px;flex-shrink:0;border-left:1px solid var(--border);display:flex;flex-direction:column;overflow:hidden}
+.hintshdr{padding:8px 12px 5px;font-size:.72rem;text-transform:uppercase;color:var(--muted);letter-spacing:.4px;flex-shrink:0}
+#hintList{flex:1 1 0;overflow-y:auto;padding:0 8px 8px;scrollbar-width:thin}
+.hi{background:var(--bg4);border-radius:var(--r);margin-bottom:5px;overflow:hidden}
+.histep{padding:6px 10px;font-size:.77rem;color:var(--muted);cursor:pointer;display:flex;align-items:center;gap:7px;user-select:none}
+.histep:hover{color:var(--text)}
+.hinum{width:17px;height:17px;background:var(--bg3);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:.66rem;font-weight:700;flex-shrink:0;color:var(--blue)}
+.hicode{display:none;padding:7px 10px;background:var(--bg3);font-family:monospace;font-size:.76rem;color:var(--peach);white-space:pre-wrap;word-break:break-all}
+.hi.open .hicode{display:block}
+.hiapply{display:none;margin:3px 10px 7px;padding:3px 9px;font-size:.7rem;border-radius:var(--r);background:var(--purple);color:#1e1e2e;border:none;cursor:pointer;font-weight:600}
+.hi.open .hiapply{display:inline-block}
+.hiapply:hover{opacity:.8}
 
-    #toolbar .logo {
-      font-size: 1rem;
-      font-weight: 700;
-      color: var(--accent);
-      letter-spacing: .5px;
-      white-space: nowrap;
-      margin-right: 6px;
-    }
-    #toolbar .logo span { color: var(--accent2); }
+/* error popup */
+#errPanel{position:fixed;bottom:10px;right:10px;max-width:340px;background:var(--bg3);
+  border:1px solid var(--red);border-radius:var(--r);z-index:800;display:none;box-shadow:0 4px 24px #0009;overflow:hidden}
+#errPanel.on{display:block}
+.errhdr{background:#f38ba810;padding:5px 10px;display:flex;align-items:center;justify-content:space-between;
+  font-size:.73rem;color:var(--red);font-weight:700;text-transform:uppercase;letter-spacing:.4px}
+.errhdr button{background:none;border:none;color:var(--red);cursor:pointer;font-size:1rem}
+#errList{max-height:140px;overflow-y:auto;padding:6px 10px;scrollbar-width:thin}
+.ei{font-size:.77rem;color:var(--text);padding:3px 0;border-bottom:1px solid var(--border);line-height:1.5}
+.ei:last-child{border:none}
+.etag{font-size:.66rem;font-weight:700;padding:1px 4px;border-radius:3px;margin-right:4px}
+.eterr{background:#f38ba820;color:var(--red)}.etwarn{background:#f9e2af20;color:var(--yellow)}
 
-    .toolbar-sep {
-      width: 1px;
-      height: 22px;
-      background: var(--border);
-      flex-shrink: 0;
-    }
+/* autocomplete popup */
+#acPop{display:none;position:fixed;z-index:9000;background:#1e1e2e;border:1px solid #45475a;
+  border-radius:8px;box-shadow:0 8px 28px rgba(0,0,0,.7);overflow:hidden;min-width:170px;max-width:310px}
+#acInner{max-height:200px;overflow-y:auto;padding:3px;scrollbar-width:thin;scrollbar-color:#45475a transparent}
+.aci{padding:4px 9px;border-radius:5px;font-size:12.5px;
+  font-family:'Cascadia Code','Fira Code',Consolas,monospace;
+  color:#cdd6f4;cursor:pointer;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+  display:flex;align-items:center;gap:6px}
+.aci:hover,.aci.sel{background:#313244;color:#89b4fa}
+.actype{font-size:.62rem;padding:1px 4px;border-radius:3px;flex-shrink:0;font-style:normal;font-weight:700;letter-spacing:.2px}
+.t-prop{background:#89b4fa18;color:#89b4fa}.t-val{background:#a6e3a118;color:#a6e3a1}
+.t-fn{background:#cba6f718;color:#cba6f7}.t-tag{background:#f38ba818;color:#f38ba8}
+.t-attr{background:#fab38718;color:#fab387}.t-pseudo{background:#f9e2af18;color:#f9e2af}
+#acFoot{padding:3px 9px 4px;font-size:.65rem;color:#45475a;border-top:1px solid #313244;display:flex;gap:10px}
 
-    #challengeSelect {
-      flex: 1 1 180px;
-      min-width: 120px;
-      max-width: 280px;
-      background: var(--bg-tab);
-      color: var(--text);
-      border: 1px solid var(--border);
-      border-radius: var(--radius);
-      padding: 4px 8px;
-      font-size: .85rem;
-      cursor: pointer;
-      outline: none;
-      transition: border-color .2s;
-    }
-    #challengeSelect:focus { border-color: var(--accent); }
+/* scrollbars */
+::-webkit-scrollbar{width:5px;height:5px}
+::-webkit-scrollbar-track{background:transparent}
+::-webkit-scrollbar-thumb{background:var(--bg4);border-radius:3px}
 
-    .btn {
-      height: 30px;
-      padding: 0 14px;
-      border: none;
-      border-radius: var(--radius);
-      font-size: .82rem;
-      font-weight: 600;
-      cursor: pointer;
-      transition: opacity .15s, transform .1s;
-      white-space: nowrap;
-      flex-shrink: 0;
-    }
-    .btn:active { transform: scale(.96); }
-    .btn:hover  { opacity: .85; }
-
-    .btn-run    { background: var(--accent3); color: #1e1e2e; }
-    .btn-reset  { background: var(--bg-tab);  color: var(--text); border: 1px solid var(--border); }
-    .btn-hint   { background: var(--accent4); color: #1e1e2e; }
-    .btn-toggle { background: var(--bg-tab);  color: var(--text); border: 1px solid var(--border); }
-    .btn-toggle.active { border-color: var(--accent2); color: var(--accent2); }
-
-    #errorBadge {
-      display: none;
-      background: var(--error);
-      color: #1e1e2e;
-      font-size: .72rem;
-      font-weight: 700;
-      padding: 2px 8px;
-      border-radius: 99px;
-      white-space: nowrap;
-      cursor: default;
-      flex-shrink: 0;
-    }
-    #errorBadge.visible { display: block; }
-
-    /* ─── Main Work Area ──────────────────────────────────── */
-    #workspace {
-      flex: 1 1 0;
-      display: flex;
-      flex-direction: column;
-      overflow: hidden;
-    }
-
-    /* Top split: editor | preview */
-    #splitRow {
-      flex: 1 1 0;
-      display: flex;
-      overflow: hidden;
-      position: relative;
-    }
-
-    /* ─── Editor Pane ─────────────────────────────────────── */
-    #editorPane {
-      width: 50%;
-      min-width: 220px;
-      display: flex;
-      flex-direction: column;
-      background: var(--bg-panel);
-      border-right: 1px solid var(--border);
-      overflow: hidden;
-    }
-
-    .tab-bar {
-      display: flex;
-      background: var(--bg-toolbar);
-      border-bottom: 1px solid var(--border);
-      height: var(--tab-h);
-    }
-    .tab-btn {
-      height: var(--tab-h);
-      padding: 0 16px;
-      background: none;
-      border: none;
-      color: var(--text-muted);
-      font-size: .82rem;
-      font-weight: 600;
-      cursor: pointer;
-      border-bottom: 2px solid transparent;
-      transition: color .2s, border-color .2s;
-      white-space: nowrap;
-    }
-    .tab-btn:hover { color: var(--text); }
-    .tab-btn.active { color: var(--accent); border-bottom-color: var(--accent); }
-
-    .editor-wrap {
-      display: none;
-      flex: 1 1 0;
-      flex-direction: column;
-      overflow: hidden;
-    }
-    .editor-wrap.active { display: flex; }
-
-    .CodeMirror {
-      flex: 1 1 0;
-      height: 100% !important;
-      font-size: 13.5px;
-      line-height: 1.6;
-      font-family: 'Cascadia Code', 'Fira Code', 'JetBrains Mono', Consolas, monospace;
-    }
-
-    /* ─── Drag Resizer ────────────────────────────────────── */
-    #resizer {
-      width: var(--resizer-w);
-      min-width: var(--resizer-w);
-      cursor: col-resize;
-      background: var(--border);
-      transition: background .2s;
-      z-index: 10;
-    }
-    #resizer:hover, #resizer.dragging { background: var(--accent); }
-
-    /* ─── Preview Pane ────────────────────────────────────── */
-    #previewPane {
-      flex: 1 1 0;
-      min-width: 220px;
-      display: flex;
-      flex-direction: column;
-      background: var(--bg-panel);
-      overflow: hidden;
-    }
-
-    .pane-header {
-      height: var(--tab-h);
-      background: var(--bg-toolbar);
-      border-bottom: 1px solid var(--border);
-      display: flex;
-      align-items: center;
-      padding: 0 14px;
-      font-size: .78rem;
-      color: var(--text-muted);
-      font-weight: 600;
-      letter-spacing: .4px;
-      text-transform: uppercase;
-      gap: 8px;
-    }
-    .pane-header .status-dot {
-      width: 7px; height: 7px;
-      border-radius: 50%;
-      background: var(--accent3);
-    }
-
-    #previewFrame {
-      flex: 1 1 0;
-      border: none;
-      background: #fff;
-    }
-
-    /* ─── Challenge Panel ─────────────────────────────────── */
-    #challengePanel {
-      height: var(--challenge-h);
-      min-height: 120px;
-      background: var(--bg-challenge);
-      border-top: 1px solid var(--border);
-      display: flex;
-      flex-direction: column;
-      overflow: hidden;
-      transition: height .25s ease;
-    }
-    #challengePanel.hidden {
-      height: 0 !important;
-      min-height: 0;
-      border-top: none;
-    }
-
-    #vResizer {
-      height: 5px;
-      cursor: row-resize;
-      background: var(--border);
-      transition: background .2s;
-      z-index: 10;
-    }
-    #vResizer:hover, #vResizer.dragging { background: var(--accent2); }
-
-    .challenge-header {
-      height: 36px;
-      background: var(--bg-toolbar);
-      border-bottom: 1px solid var(--border);
-      display: flex;
-      align-items: center;
-      padding: 0 14px;
-      gap: 10px;
-      flex-shrink: 0;
-    }
-    .challenge-header h3 {
-      font-size: .82rem;
-      color: var(--accent2);
-      letter-spacing: .4px;
-      text-transform: uppercase;
-      flex: 1;
-    }
-
-    .challenge-body {
-      flex: 1 1 0;
-      display: flex;
-      overflow: hidden;
-      gap: 0;
-    }
-
-    .challenge-desc {
-      flex: 1 1 0;
-      padding: 14px 18px;
-      overflow-y: auto;
-      font-size: .85rem;
-      line-height: 1.65;
-      color: var(--text);
-      scrollbar-width: thin;
-    }
-    .challenge-desc h4 {
-      color: var(--accent);
-      margin-bottom: 6px;
-      font-size: .9rem;
-    }
-    .challenge-desc ul {
-      padding-left: 18px;
-    }
-    .challenge-desc li { margin-bottom: 4px; }
-    .challenge-desc code {
-      background: var(--bg-tab);
-      padding: 1px 5px;
-      border-radius: 3px;
-      font-family: monospace;
-      font-size: .82rem;
-      color: var(--accent4);
-    }
-    .challenge-desc .badge {
-      display: inline-block;
-      padding: 1px 8px;
-      border-radius: 99px;
-      font-size: .72rem;
-      font-weight: 700;
-      margin-bottom: 8px;
-    }
-    .badge-easy   { background: #a6e3a120; color: var(--accent3); border: 1px solid var(--accent3); }
-    .badge-medium { background: #f9e2af20; color: var(--warn); border: 1px solid var(--warn); }
-    .badge-hard   { background: #f38ba820; color: var(--error); border: 1px solid var(--error); }
-
-    .challenge-hints {
-      width: 280px;
-      flex-shrink: 0;
-      border-left: 1px solid var(--border);
-      display: flex;
-      flex-direction: column;
-      overflow: hidden;
-    }
-    .hints-header {
-      padding: 10px 14px 6px;
-      font-size: .75rem;
-      text-transform: uppercase;
-      color: var(--text-muted);
-      letter-spacing: .4px;
-      flex-shrink: 0;
-    }
-    #hintList {
-      flex: 1 1 0;
-      overflow-y: auto;
-      padding: 0 10px 10px;
-      scrollbar-width: thin;
-    }
-    .hint-item {
-      background: var(--bg-tab);
-      border-radius: var(--radius);
-      margin-bottom: 6px;
-      overflow: hidden;
-    }
-    .hint-step {
-      padding: 7px 11px;
-      font-size: .78rem;
-      color: var(--text-muted);
-      cursor: pointer;
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      user-select: none;
-    }
-    .hint-step:hover { color: var(--text); }
-    .hint-step .step-num {
-      width: 18px; height: 18px;
-      background: var(--bg-toolbar);
-      border-radius: 50%;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: .68rem;
-      font-weight: 700;
-      flex-shrink: 0;
-      color: var(--accent);
-    }
-    .hint-code {
-      display: none;
-      padding: 8px 11px;
-      background: var(--bg-toolbar);
-      font-family: monospace;
-      font-size: .78rem;
-      color: var(--accent4);
-      white-space: pre-wrap;
-      word-break: break-all;
-    }
-    .hint-item.open .hint-code { display: block; }
-    .hint-apply-btn {
-      display: none;
-      margin: 4px 11px 8px;
-      padding: 3px 10px;
-      font-size: .72rem;
-      border-radius: var(--radius);
-      background: var(--accent2);
-      color: #1e1e2e;
-      border: none;
-      cursor: pointer;
-      font-weight: 600;
-    }
-    .hint-item.open .hint-apply-btn { display: inline-block; }
-    .hint-apply-btn:hover { opacity: .8; }
-
-    /* ─── Error Panel ─────────────────────────────────────── */
-    #errorPanel {
-      position: fixed;
-      bottom: 10px;
-      right: 12px;
-      max-width: 360px;
-      background: var(--bg-toolbar);
-      border: 1px solid var(--error);
-      border-radius: var(--radius);
-      overflow: hidden;
-      z-index: 1000;
-      display: none;
-      box-shadow: 0 4px 24px #0008;
-    }
-    #errorPanel.visible { display: block; }
-    #errorPanel .ep-header {
-      background: #f38ba815;
-      padding: 6px 12px;
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      font-size: .75rem;
-      color: var(--error);
-      font-weight: 700;
-      text-transform: uppercase;
-      letter-spacing: .4px;
-    }
-    #errorPanel .ep-close {
-      background: none;
-      border: none;
-      color: var(--error);
-      cursor: pointer;
-      font-size: 1rem;
-      line-height: 1;
-    }
-    #errorList {
-      max-height: 160px;
-      overflow-y: auto;
-      padding: 8px 12px;
-      scrollbar-width: thin;
-    }
-    .error-item {
-      font-size: .78rem;
-      color: var(--text);
-      padding: 4px 0;
-      border-bottom: 1px solid var(--border);
-      line-height: 1.5;
-    }
-    .error-item:last-child { border-bottom: none; }
-    .error-item .err-type {
-      font-size: .68rem;
-      font-weight: 700;
-      padding: 1px 5px;
-      border-radius: 3px;
-      margin-right: 5px;
-    }
-    .err-error { background: #f38ba820; color: var(--error); }
-    .err-warning { background: #f9e2af20; color: var(--warn); }
-
-    /* ─── Custom Autocomplete Popup ─────────────────────── */
-    #ac-popup {
-      display: none;
-      position: fixed;
-      z-index: 9999;
-      background: #1e1e2e;
-      border: 1px solid #45475a;
-      border-radius: 8px;
-      box-shadow: 0 8px 32px rgba(0,0,0,.65);
-      overflow: hidden;
-      min-width: 180px;
-      max-width: 320px;
-    }
-    #ac-list {
-      max-height: 210px;
-      overflow-y: auto;
-      padding: 4px;
-      scrollbar-width: thin;
-      scrollbar-color: #45475a transparent;
-    }
-    .ac-item {
-      padding: 5px 10px;
-      border-radius: 5px;
-      font-family: 'Cascadia Code','Fira Code','JetBrains Mono',Consolas,monospace;
-      font-size: 12.5px;
-      color: #cdd6f4;
-      cursor: pointer;
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
-      display: flex;
-      align-items: center;
-      gap: 7px;
-    }
-    .ac-item:hover, .ac-item.ac-active {
-      background: #313244;
-      color: #89b4fa;
-    }
-    .ac-type {
-      font-size: .65rem;
-      padding: 1px 5px;
-      border-radius: 3px;
-      flex-shrink: 0;
-      font-style: normal;
-      font-weight: 700;
-      letter-spacing: .3px;
-    }
-    .ac-type-prop  { background: #89b4fa22; color: #89b4fa; }
-    .ac-type-value { background: #a6e3a122; color: #a6e3a1; }
-    .ac-type-tag   { background: #f38ba822; color: #f38ba8; }
-    .ac-type-attr  { background: #fab38722; color: #fab387; }
-    .ac-type-fn    { background: #cba6f722; color: #cba6f7; }
-    .ac-type-pseudo{ background: #f9e2af22; color: #f9e2af; }
-    #ac-footer {
-      padding: 4px 10px 5px;
-      font-size: .68rem;
-      color: #585b70;
-      border-top: 1px solid #313244;
-      display: flex;
-      gap: 10px;
-    }
-
-    /* ─── Scrollbars ──────────────────────────────────────── */
-    ::-webkit-scrollbar { width: 6px; height: 6px; }
-    ::-webkit-scrollbar-track { background: transparent; }
-    ::-webkit-scrollbar-thumb { background: var(--bg-tab); border-radius: 3px; }
-    ::-webkit-scrollbar-thumb:hover { background: var(--text-muted); }
-
-    /* ─── Mobile Layout ───────────────────────────────────── */
-    @media (max-width: 700px) {
-      :root { --toolbar-h: auto; }
-
-      /* Toolbar: two tidy rows */
-      #toolbar {
-        flex-wrap: wrap;
-        height: auto;
-        padding: 8px 10px;
-        gap: 6px;
-        align-items: center;
-      }
-      .logo { font-size: .9rem; }
-      .toolbar-sep { display: none; }
-
-      /* Challenge select fills its row */
-      #challengeSelect {
-        flex: 1 1 140px;
-        max-width: 100%;
-        font-size: .8rem;
-      }
-
-      /* Compact buttons */
-      .btn { height: 28px; padding: 0 11px; font-size: .78rem; }
-      #errorBadge { font-size: .68rem; padding: 2px 6px; }
-
-      /* Stack editor above preview */
-      #splitRow { flex-direction: column; }
-      #resizer  { display: none; }
-
-      /* Editor takes up a good chunk of screen — tall enough to type */
-      #editorPane {
-        width: 100% !important;
-        flex: none;
-        height: 52vh;
-        min-height: 200px;
-        border-right: none;
-        border-bottom: 1px solid var(--border);
-      }
-
-      /* CodeMirror fills the editor pane */
-      .editor-wrap.active { height: 100%; }
-      .CodeMirror { font-size: 13px !important; }
-
-      /* Preview takes remaining space */
-      #previewPane { flex: 1 1 0; min-height: 160px; }
-
-      /* Challenge panel */
-      #challengePanel  { height: auto; max-height: 280px; }
-      .challenge-hints { width: 100%; border-left: none; border-top: 1px solid var(--border); }
-      .challenge-body  { flex-direction: column; }
-
-      #errorPanel { max-width: calc(100vw - 20px); right: 10px; bottom: 8px; }
-    }
-
-    /* Very small phones */
-    @media (max-width: 400px) {
-      #editorPane { height: 48vh; }
-      .btn { height: 26px; padding: 0 9px; font-size: .74rem; }
-    }
-  </style>
+/* mobile */
+@media(max-width:680px){
+  #toolbar{height:auto;padding:7px 10px;flex-wrap:wrap;gap:6px}
+  .sep{display:none}
+  #csel{flex:1 1 130px;max-width:100%;font-size:.79rem}
+  .btn{height:26px;padding:0 10px;font-size:.76rem}
+  #split{flex-direction:column}
+  #hres{display:none}
+  #edPane{width:100%!important;flex:none;height:50vh;min-height:160px;border-right:none;border-bottom:1px solid var(--border)}
+  #prevPane{flex:1 1 0;min-height:120px}
+  #chalPanel{height:auto;max-height:260px}
+  .hints{width:100%;border-left:none;border-top:1px solid var(--border)}
+  .chalBody{flex-direction:column}
+  #errPanel{max-width:calc(100vw - 20px)}
+}
+</style>
 </head>
 <body>
 <div id="app">
 
-  <!-- ── Toolbar ── -->
-  <div id="toolbar">
-    <div class="logo">CSS<span>Forge</span></div>
-
-    <div class="toolbar-sep"></div>
-
-    <select id="challengeSelect">
-      <option value="blank">── Free Play ──</option>
-      <optgroup label="Beginner">
-        <option value="center-div">① Center a Div</option>
-        <option value="color-box">② Color Box Basics</option>
-        <option value="typography">③ Typography Styles</option>
-      </optgroup>
-      <optgroup label="Intermediate">
-        <option value="flexbox-nav">④ Flexbox Nav Bar</option>
-        <option value="card-hover">⑤ Card with Hover Effect</option>
-        <option value="grid-layout">⑥ CSS Grid Layout</option>
-      </optgroup>
-      <optgroup label="Advanced">
-        <option value="animated-button">⑦ Animated Button</option>
-        <option value="glassmorphism">⑧ Glassmorphism Card</option>
-        <option value="responsive-nav">⑨ Responsive Nav</option>
-      </optgroup>
-    </select>
-
-    <button class="btn btn-run"    id="runBtn">▶ Run</button>
-    <button class="btn btn-reset"  id="resetBtn">↺ Reset</button>
-    <button class="btn btn-hint"   id="hintBtn">💡 Hints</button>
-    <button class="btn btn-toggle" id="challengeToggleBtn">📋 Challenge</button>
-    <span   id="errorBadge">⚠ CSS errors</span>
-  </div>
-
-  <!-- ── Workspace ── -->
-  <div id="workspace">
-
-    <!-- Vertical resizer for challenge panel -->
-    <div id="vResizer"></div>
-
-    <!-- Main split row -->
-    <div id="splitRow">
-
-      <!-- Editor pane -->
-      <div id="editorPane">
-        <div class="tab-bar">
-          <button class="tab-btn active" data-tab="html">HTML</button>
-          <button class="tab-btn"        data-tab="css">CSS</button>
-        </div>
-
-        <div class="editor-wrap active" id="wrap-html">
-          <textarea id="htmlEditor"></textarea>
-        </div>
-        <div class="editor-wrap" id="wrap-css">
-          <textarea id="cssEditor"></textarea>
-        </div>
-      </div>
-
-      <!-- Drag resizer -->
-      <div id="resizer"></div>
-
-      <!-- Preview pane -->
-      <div id="previewPane">
-        <div class="pane-header">
-          <div class="status-dot" id="statusDot"></div>
-          Live Preview
-        </div>
-        <iframe id="previewFrame"
-          sandbox="allow-scripts allow-same-origin"
-          title="Live Preview"></iframe>
-      </div>
-
-    </div>
-
-    <!-- Challenge panel (above splitRow visually but rendered below for DOM order) -->
-    <div id="challengePanel" class="hidden">
-      <div class="challenge-header">
-        <h3 id="challengeTitle">Challenge</h3>
-        <button class="btn btn-toggle" id="loadChallengeBtn" style="font-size:.72rem;height:24px;padding:0 10px;">Load Starter Code</button>
-      </div>
-      <div class="challenge-body">
-        <div class="challenge-desc" id="challengeDesc">Select a challenge from the dropdown above.</div>
-        <div class="challenge-hints">
-          <div class="hints-header">Hints</div>
-          <div id="hintList"></div>
-        </div>
-      </div>
-    </div>
-
-  </div>
-
+<div id="toolbar">
+  <div class="logo">CSS<span>Forge</span></div>
+  <div class="sep"></div>
+  <select id="csel">
+    <option value="blank">── Free Play ──</option>
+    <optgroup label="Beginner">
+      <option value="center-div">① Center a Div</option>
+      <option value="color-box">② Color Box Basics</option>
+      <option value="typography">③ Typography Styles</option>
+    </optgroup>
+    <optgroup label="Intermediate">
+      <option value="flexbox-nav">④ Flexbox Nav Bar</option>
+      <option value="card-hover">⑤ Card with Hover</option>
+      <option value="grid-layout">⑥ CSS Grid Layout</option>
+    </optgroup>
+    <optgroup label="Advanced">
+      <option value="anim-btn">⑦ Animated Button</option>
+      <option value="glass">⑧ Glassmorphism Card</option>
+      <option value="resp-nav">⑨ Responsive Nav</option>
+    </optgroup>
+  </select>
+  <button class="btn brun"   id="runBtn">&#9654; Run</button>
+  <button class="btn breset" id="resetBtn">&#8634; Reset</button>
+  <button class="btn bhint"  id="hintBtn">&#128161; Hints</button>
+  <button class="btn bchal"  id="chalBtn">&#128203; Challenge</button>
+  <span id="errBadge">&#9888; CSS errors</span>
 </div>
 
-<!-- Custom Autocomplete Popup -->
-<div id="ac-popup">
-  <div id="ac-list"></div>
-  <div id="ac-footer"><span>↑↓ navigate</span><span>↵ / Tab apply</span><span>Esc close</span></div>
+<div id="work">
+  <div id="split">
+    <div id="edPane">
+      <div class="tabbar">
+        <button class="tab on" data-tab="html">HTML</button>
+        <button class="tab"    data-tab="css">CSS</button>
+      </div>
+      <div class="ewrap on" id="w-html"><textarea id="htmlEd"></textarea></div>
+      <div class="ewrap"    id="w-css"><textarea id="cssEd"></textarea></div>
+    </div>
+    <div id="hres"></div>
+    <div id="prevPane">
+      <div class="panehdr"><div class="dot" id="dot"></div>Live Preview</div>
+      <iframe id="prevFrame" sandbox="allow-scripts allow-same-origin" title="Live Preview"></iframe>
+    </div>
+  </div>
+  <div id="vres"></div>
+  <div id="chalPanel">
+    <div class="chalHdr">
+      <h3 id="chalTitle">Challenge</h3>
+      <button class="btn breset" id="loadBtn" style="height:22px;padding:0 9px;font-size:.7rem">Load Starter</button>
+    </div>
+    <div class="chalBody">
+      <div class="chalDesc" id="chalDesc">Pick a challenge from the dropdown.</div>
+      <div class="hints">
+        <div class="hintshdr">Hints</div>
+        <div id="hintList"></div>
+      </div>
+    </div>
+  </div>
 </div>
 
-<!-- Error Panel -->
-<div id="errorPanel">
-  <div class="ep-header">
-    CSS Issues
-    <button class="ep-close" id="closeErrors">×</button>
-  </div>
-  <div id="errorList"></div>
+<div id="acPop">
+  <div id="acInner"></div>
+  <div id="acFoot"><span>&#8593;&#8595; navigate</span><span>Enter/Tab apply</span><span>Esc close</span></div>
+</div>
+
+<div id="errPanel">
+  <div class="errhdr">CSS Issues <button id="errClose">&#215;</button></div>
+  <div id="errList"></div>
 </div>
 
 <script>
-// ─── Challenge Data ──────────────────────────────────────────────────────────
-const CHALLENGES = {
-  blank: {
-    title: 'Free Play',
-    difficulty: null,
-    description: '<p>Write any HTML and CSS you like. Use the editors on the left and click <strong>Run</strong> to see the result.</p>',
-    html: `<div class="box">Hello, CSS!</div>`,
-    css: `.box {\n  padding: 40px;\n  text-align: center;\n  font-size: 2rem;\n  font-family: sans-serif;\n}`,
-    hints: []
-  },
+'use strict';
 
-  'center-div': {
-    title: 'Center a Div',
-    difficulty: 'easy',
-    description: `
-      <span class="badge badge-easy">Easy</span>
-      <h4>🎯 Goal</h4>
-      <p>Horizontally <em>and</em> vertically center the <code>.box</code> inside the <code>.container</code>.</p>
-      <h4>Requirements</h4>
-      <ul>
-        <li>The container fills the full viewport</li>
-        <li>The box is perfectly centered both ways</li>
-        <li>Try using <strong>Flexbox</strong></li>
-      </ul>
-    `,
-    html: `<div class="container">
-  <div class="box">Centered!</div>
-</div>`,
-    css: `/* Make .container fill the screen and center .box */
-.container {
+/* ── Challenges ─────────────────────────────────────────────────────── */
+var CH = {
+  blank:{title:'Free Play',diff:null,
+    desc:'<p>Write any HTML and CSS. Preview updates automatically.</p>',
+    html:'<div class="box">Hello, CSS!</div>',
+    css:'.box {\n  padding: 40px;\n  text-align: center;\n  font-size: 2rem;\n  font-family: sans-serif;\n}',
+    hints:[]},
 
-}
+  'center-div':{title:'Center a Div',diff:'easy',
+    desc:'<span class="badge easy">Easy</span><h4>Goal</h4><p>Horizontally and vertically center <code>.box</code> inside <code>.container</code>.</p><ul><li>Container fills viewport</li><li>Use <strong>Flexbox</strong></li></ul>',
+    html:'<div class="container">\n  <div class="box">Centered!</div>\n</div>',
+    css:'.container {\n  /* fill screen + center with flexbox */\n}\n\n.box {\n  width: 200px;\n  height: 100px;\n  background: #89b4fa;\n  color: #1e1e2e;\n  font-size: 1.4rem;\n  font-family: sans-serif;\n  font-weight: bold;\n  border-radius: 8px;\n  display: flex;\n  align-items: center;\n  justify-content: center;\n}',
+    hints:[
+      {l:'Set container size',c:'.container {\n  width: 100vw;\n  height: 100vh;\n}'},
+      {l:'Add display: flex',c:'.container {\n  display: flex;\n}'},
+      {l:'Center horizontally',c:'.container {\n  justify-content: center;\n}'},
+      {l:'Center vertically',c:'.container {\n  align-items: center;\n}'},
+    ]},
 
-.box {
-  width: 200px;
-  height: 100px;
-  background: #89b4fa;
-  color: #1e1e2e;
-  font-size: 1.4rem;
-  font-family: sans-serif;
-  font-weight: bold;
-  border-radius: 8px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}`,
-    hints: [
-      { label: 'Set container dimensions', code: `.container {\n  width: 100vw;\n  height: 100vh;\n}` },
-      { label: 'Add display: flex', code: `.container {\n  display: flex;\n}` },
-      { label: 'Center horizontally', code: `.container {\n  justify-content: center;\n}` },
-      { label: 'Center vertically', code: `.container {\n  align-items: center;\n}` },
-    ]
-  },
+  'color-box':{title:'Color Box Basics',diff:'easy',
+    desc:'<span class="badge easy">Easy</span><h4>Goal</h4><p>Three boxes, equal size, different colors, rounded corners in a row.</p><ul><li>Each: <code>150x150px</code></li><li>Different <code>background-color</code></li><li><code>border-radius: 12px</code></li></ul>',
+    html:'<div class="row">\n  <div class="box box-1">One</div>\n  <div class="box box-2">Two</div>\n  <div class="box box-3">Three</div>\n</div>',
+    css:'.row {\n  display: flex;\n  gap: 20px;\n  padding: 40px;\n  font-family: sans-serif;\n}\n.box {\n  /* size, radius, centered text */\n}\n.box-1 { /* color 1 */ }\n.box-2 { /* color 2 */ }\n.box-3 { /* color 3 */ }',
+    hints:[
+      {l:'Set box size',c:'.box {\n  width: 150px;\n  height: 150px;\n}'},
+      {l:'Border radius',c:'.box {\n  border-radius: 12px;\n}'},
+      {l:'Center text',c:'.box {\n  display: flex;\n  align-items: center;\n  justify-content: center;\n  font-weight: bold;\n  font-size: 1.1rem;\n}'},
+      {l:'Colors',c:'.box-1 { background: #f38ba8; }\n.box-2 { background: #a6e3a1; }\n.box-3 { background: #89b4fa; }'},
+    ]},
 
-  'color-box': {
-    title: 'Color Box Basics',
-    difficulty: 'easy',
-    description: `
-      <span class="badge badge-easy">Easy</span>
-      <h4>🎯 Goal</h4>
-      <p>Style three boxes to each have a different background color, equal size, and rounded corners.</p>
-      <h4>Requirements</h4>
-      <ul>
-        <li>Each box: <code>150px × 150px</code></li>
-        <li>Different <code>background-color</code> for each</li>
-        <li><code>border-radius: 12px</code></li>
-        <li>Displayed in a row with <code>gap: 20px</code></li>
-      </ul>
-    `,
-    html: `<div class="row">
-  <div class="box box-1">One</div>
-  <div class="box box-2">Two</div>
-  <div class="box box-3">Three</div>
-</div>`,
-    css: `.row {
-  display: flex;
-  gap: 20px;
-  padding: 40px;
-  font-family: sans-serif;
-}
+  typography:{title:'Typography Styles',diff:'easy',
+    desc:'<span class="badge easy">Easy</span><h4>Goal</h4><p>Style text elements into a polished article look.</p><ul><li><code>h1</code>: large, tight letter-spacing</li><li><code>p</code>: line-height ~1.7</li><li><code>a</code>: custom color, underline on hover only</li><li><code>blockquote</code>: left border, italic</li></ul>',
+    html:"<article>\n  <h1>The Art of CSS</h1>\n  <p>CSS is a <a href=\"#\">powerful</a> styling language.\n  Mastering it opens a world of creative possibilities.</p>\n  <blockquote>\"Design is intelligence made visible.\"</blockquote>\n  <p>Learn it step by step.</p>\n</article>",
+    css:'body { background: #f8f8f8; }\narticle {\n  max-width: 600px;\n  margin: 60px auto;\n  padding: 0 20px;\n  font-family: Georgia, serif;\n}\nh1 { /* style me */ }\np  { /* style me */ }\na  { /* style me */ }\nblockquote { /* style me */ }',
+    hints:[
+      {l:'h1 style',c:'h1 {\n  font-size: 2.4rem;\n  color: #1a1a2e;\n  letter-spacing: -1px;\n  margin-bottom: 16px;\n}'},
+      {l:'Paragraph style',c:'p {\n  color: #444;\n  line-height: 1.75;\n  margin-bottom: 1rem;\n}'},
+      {l:'Link style',c:'a {\n  color: #6c63ff;\n  text-decoration: none;\n}\na:hover {\n  text-decoration: underline;\n}'},
+      {l:'Blockquote',c:'blockquote {\n  border-left: 4px solid #6c63ff;\n  padding: 8px 20px;\n  margin: 20px 0;\n  font-style: italic;\n  color: #666;\n  background: #f0eeff;\n}'},
+    ]},
 
-.box {
-  /* Add size, border-radius, centered text here */
-}
+  'flexbox-nav':{title:'Flexbox Nav Bar',diff:'medium',
+    desc:'<span class="badge med">Medium</span><h4>Goal</h4><p>Build a nav bar with logo left and links right using <strong>Flexbox</strong>.</p><ul><li>Dark background, full width</li><li>Links highlight on hover</li></ul>',
+    html:'<nav>\n  <a class="logo" href="#">MyBrand</a>\n  <ul class="links">\n    <li><a href="#">Home</a></li>\n    <li><a href="#">About</a></li>\n    <li><a href="#">Work</a></li>\n    <li><a href="#">Contact</a></li>\n  </ul>\n</nav>\n<main>\n  <h2>Page Content</h2>\n  <p>Nav sits above.</p>\n</main>',
+    css:'* { box-sizing: border-box; margin: 0; padding: 0; }\nnav {\n  /* flex, space-between, dark bg */\n}\n.logo { /* large, bold, colored */ }\n.links { /* flex row, no bullets */ }\n.links a { /* padding, hover transition */ }\n.links a:hover { }\nmain { padding: 40px; font-family: sans-serif; }',
+    hints:[
+      {l:'Nav base',c:'nav {\n  display: flex;\n  align-items: center;\n  justify-content: space-between;\n  background: #1a1a2e;\n  padding: 0 24px;\n  height: 60px;\n}'},
+      {l:'Logo',c:'.logo {\n  font-size: 1.3rem;\n  font-weight: 800;\n  color: #89b4fa;\n  text-decoration: none;\n}'},
+      {l:'Links',c:'.links {\n  display: flex;\n  list-style: none;\n  gap: 4px;\n}\n.links a {\n  color: #cdd6f4;\n  text-decoration: none;\n  padding: 8px 14px;\n  border-radius: 6px;\n  font-family: sans-serif;\n  font-size: .9rem;\n  transition: background .2s, color .2s;\n}'},
+      {l:'Hover',c:'.links a:hover {\n  background: #313244;\n  color: #89b4fa;\n}'},
+    ]},
 
-.box-1 { /* color 1 */ }
-.box-2 { /* color 2 */ }
-.box-3 { /* color 3 */ }`,
-    hints: [
-      { label: 'Set box size', code: `.box {\n  width: 150px;\n  height: 150px;\n}` },
-      { label: 'Add border radius', code: `.box {\n  border-radius: 12px;\n}` },
-      { label: 'Center text', code: `.box {\n  display: flex;\n  align-items: center;\n  justify-content: center;\n  font-weight: bold;\n  font-size: 1.1rem;\n}` },
-      { label: 'Add colors', code: `.box-1 { background: #f38ba8; }\n.box-2 { background: #a6e3a1; }\n.box-3 { background: #89b4fa; }` },
-    ]
-  },
+  'card-hover':{title:'Card with Hover',diff:'medium',
+    desc:'<span class="badge med">Medium</span><h4>Goal</h4><p>Card that lifts and deepens shadow on hover.</p><ul><li>Rounded white card with image area</li><li>Hover: <code>translateY</code> + deeper shadow</li><li>Smooth <code>transition</code></li></ul>',
+    html:'<div class="cards">\n  <div class="card">\n    <div class="img"></div>\n    <div class="body">\n      <h3>Product Name</h3>\n      <p>A short description here.</p>\n      <button>Buy Now</button>\n    </div>\n  </div>\n  <div class="card">\n    <div class="img" style="background:#cba6f7"></div>\n    <div class="body">\n      <h3>Another One</h3>\n      <p>Even more awesome.</p>\n      <button>Buy Now</button>\n    </div>\n  </div>\n</div>',
+    css:'body { background: #f0f0f5; font-family: sans-serif; padding: 40px; }\n.cards { display: flex; gap: 24px; flex-wrap: wrap; }\n.card {\n  /* width, white bg, radius, shadow, transition */\n}\n.card:hover {\n  /* lift + deeper shadow */\n}\n.img { height: 160px; background: #89b4fa; }\n.body { padding: 16px; }\n.body h3 { }\n.body p { }\n.body button { }',
+    hints:[
+      {l:'Base card',c:'.card {\n  width: 240px;\n  background: #fff;\n  border-radius: 14px;\n  overflow: hidden;\n  box-shadow: 0 2px 12px rgba(0,0,0,.08);\n  transition: transform .25s, box-shadow .25s;\n}'},
+      {l:'Hover lift',c:'.card:hover {\n  transform: translateY(-6px);\n  box-shadow: 0 12px 32px rgba(0,0,0,.15);\n}'},
+      {l:'Body text',c:'.body h3 {\n  margin-bottom: 8px;\n}\n.body p {\n  font-size: .85rem;\n  color: #666;\n  margin-bottom: 14px;\n  line-height: 1.5;\n}'},
+      {l:'Button',c:'.body button {\n  background: #6c63ff;\n  color: #fff;\n  border: none;\n  padding: 8px 18px;\n  border-radius: 6px;\n  cursor: pointer;\n  font-size: .85rem;\n  font-weight: 600;\n  transition: background .2s;\n}\n.body button:hover { background: #5a52d5; }'},
+    ]},
 
-  'typography': {
-    title: 'Typography Styles',
-    difficulty: 'easy',
-    description: `
-      <span class="badge badge-easy">Easy</span>
-      <h4>🎯 Goal</h4>
-      <p>Style the text elements to create a polished article look.</p>
-      <h4>Requirements</h4>
-      <ul>
-        <li><code>h1</code>: large, dark, tight letter-spacing</li>
-        <li><code>p</code>: comfortable line-height (~1.7)</li>
-        <li><code>a</code>: custom color, no underline by default, underline on hover</li>
-        <li><code>blockquote</code>: left border, italic, muted text</li>
-      </ul>
-    `,
-    html: `<article>
-  <h1>The Art of CSS</h1>
-  <p>CSS is a <a href="#">powerful</a> styling language that
-  controls how web pages look and feel. Mastering it opens
-  a world of creative possibilities.</p>
-  <blockquote>
-    "Design is intelligence made visible."
-  </blockquote>
-  <p>Learn it step by step and you'll be amazed
-  how much you can create with just a few lines.</p>
-</article>`,
-    css: `body { background: #f8f8f8; }
-article {
-  max-width: 600px;
-  margin: 60px auto;
-  padding: 0 20px;
-  font-family: Georgia, serif;
-}
+  'grid-layout':{title:'CSS Grid Layout',diff:'medium',
+    desc:'<span class="badge med">Medium</span><h4>Goal</h4><p>Build a page layout with <strong>CSS Grid</strong>.</p><ul><li>Named template areas</li><li>Sidebar 220px, main fills rest</li><li>Header/footer span full width</li></ul>',
+    html:'<div class="layout">\n  <header>Header</header>\n  <aside>Sidebar</aside>\n  <main>Main Content</main>\n  <footer>Footer</footer>\n</div>',
+    css:'* { box-sizing: border-box; margin: 0; padding: 0; }\n.layout {\n  /* grid, template-areas, min-height: 100vh */\n}\nheader { grid-area: header; }\naside  { grid-area: sidebar; }\nmain   { grid-area: main; }\nfooter { grid-area: footer; }\n\nheader { background: #1a1a2e; color: #fff; }\naside  { background: #252540; color: #ccc; }\nmain   { background: #f8f8ff; }\nfooter { background: #1a1a2e; color: #888; }',
+    hints:[
+      {l:'Grid container',c:'.layout {\n  display: grid;\n  min-height: 100vh;\n  grid-template-columns: 220px 1fr;\n  grid-template-rows: 60px 1fr 50px;\n}'},
+      {l:'Template areas',c:'.layout {\n  grid-template-areas:\n    "header header"\n    "sidebar main"\n    "footer footer";\n}'},
+      {l:'Padding',c:'header, footer, aside, main {\n  padding: 20px 24px;\n  font-family: sans-serif;\n}'},
+      {l:'Main color',c:'main { color: #333; }'},
+    ]},
 
-h1 { /* style me */ }
-p  { /* style me */ }
-a  { /* style me */ }
-blockquote { /* style me */ }`,
-    hints: [
-      { label: 'Style h1', code: `h1 {\n  font-size: 2.4rem;\n  color: #1a1a2e;\n  letter-spacing: -1px;\n  margin-bottom: 16px;\n}` },
-      { label: 'Style paragraphs', code: `p {\n  color: #444;\n  line-height: 1.75;\n  margin-bottom: 1rem;\n}` },
-      { label: 'Style links', code: `a {\n  color: #6c63ff;\n  text-decoration: none;\n}\na:hover {\n  text-decoration: underline;\n}` },
-      { label: 'Style blockquote', code: `blockquote {\n  border-left: 4px solid #6c63ff;\n  padding: 8px 20px;\n  margin: 20px 0;\n  font-style: italic;\n  color: #666;\n  background: #f0eeff;\n}` },
-    ]
-  },
+  'anim-btn':{title:'Animated Button',diff:'hard',
+    desc:'<span class="badge hard">Hard</span><h4>Goal</h4><p>Button fills left-to-right on hover using only CSS.</p><ul><li>Uses <code>::before</code> + <code>transform: scaleX()</code></li><li>Text color changes</li><li><code>overflow: hidden</code> clips the fill</li></ul>',
+    html:'<div class="showcase">\n  <button class="fbtn">Hover Me</button>\n</div>',
+    css:'body {\n  background: #1a1a2e;\n  display: flex;\n  justify-content: center;\n  align-items: center;\n  height: 100vh;\n}\n.fbtn {\n  /* border, transparent bg, position:relative, overflow:hidden */\n}\n.fbtn::before {\n  /* fill layer, scaleX(0) */\n}\n.fbtn:hover::before { }\n.fbtn:hover { }',
+    hints:[
+      {l:'Base button',c:'.fbtn {\n  padding: 12px 32px;\n  font-size: 1rem;\n  font-family: sans-serif;\n  font-weight: 700;\n  border: 2px solid #89b4fa;\n  background: transparent;\n  color: #89b4fa;\n  cursor: pointer;\n  border-radius: 4px;\n  position: relative;\n  overflow: hidden;\n  transition: color .3s;\n  letter-spacing: .5px;\n}'},
+      {l:'Pseudo fill',c:".fbtn::before {\n  content: '';\n  position: absolute;\n  inset: 0;\n  background: #89b4fa;\n  transform: scaleX(0);\n  transform-origin: left;\n  transition: transform .3s ease;\n  z-index: 0;\n}"},
+      {l:'Hover expand',c:'.fbtn:hover::before {\n  transform: scaleX(1);\n}\n.fbtn:hover {\n  color: #1a1a2e;\n}'},
+      {l:'Fix z-index',c:'/* Wrap text in <span> */\n.fbtn span {\n  position: relative;\n  z-index: 1;\n}'},
+    ]},
 
-  'flexbox-nav': {
-    title: 'Flexbox Nav Bar',
-    difficulty: 'medium',
-    description: `
-      <span class="badge badge-medium">Medium</span>
-      <h4>🎯 Goal</h4>
-      <p>Build a navigation bar using <strong>Flexbox</strong> with a logo on the left and nav links on the right.</p>
-      <h4>Requirements</h4>
-      <ul>
-        <li>Dark background nav bar, full width</li>
-        <li>Logo on the far left, links on the far right</li>
-        <li>Links highlighted on hover (background + color change)</li>
-        <li>Comfortable padding and spacing between items</li>
-      </ul>
-    `,
-    html: `<nav>
-  <a class="logo" href="#">MyBrand</a>
-  <ul class="nav-links">
-    <li><a href="#">Home</a></li>
-    <li><a href="#">About</a></li>
-    <li><a href="#">Work</a></li>
-    <li><a href="#">Contact</a></li>
-  </ul>
-</nav>
+  glass:{title:'Glassmorphism Card',diff:'hard',
+    desc:'<span class="badge hard">Hard</span><h4>Goal</h4><p>Frosted-glass card over a colorful gradient background.</p><ul><li>Gradient background with colored blobs</li><li>Card: <code>backdrop-filter: blur()</code></li><li>Semi-transparent bg + white border</li></ul>',
+    html:'<div class="scene">\n  <div class="blob b1"></div>\n  <div class="blob b2"></div>\n  <div class="glass">\n    <h2>Glass Card</h2>\n    <p>Frosted glass effect over colorful blobs.</p>\n    <button class="gbtn">Learn More</button>\n  </div>\n</div>',
+    css:'* { box-sizing: border-box; margin: 0; padding: 0; }\n.scene {\n  /* 100vw/vh, dark gradient, flex center */\n}\n.blob { position: absolute; border-radius: 50%; filter: blur(60px); opacity: .6; }\n.b1 { }\n.b2 { }\n.glass {\n  position: relative; z-index: 1;\n  /* backdrop-filter, semi-transparent bg */\n}\n.gbtn { }',
+    hints:[
+      {l:'Scene',c:'.scene {\n  width: 100vw;\n  height: 100vh;\n  background: linear-gradient(135deg, #0f0c29, #302b63, #24243e);\n  display: flex;\n  align-items: center;\n  justify-content: center;\n  overflow: hidden;\n  position: relative;\n}'},
+      {l:'Blobs',c:'.b1 { width: 300px; height: 300px; background: #cba6f7; top: -80px; left: -80px; }\n.b2 { width: 250px; height: 250px; background: #89b4fa; bottom: -60px; right: -60px; }'},
+      {l:'Glass card',c:'.glass {\n  background: rgba(255,255,255,.1);\n  backdrop-filter: blur(20px);\n  -webkit-backdrop-filter: blur(20px);\n  border: 1px solid rgba(255,255,255,.2);\n  border-radius: 20px;\n  padding: 40px 36px;\n  max-width: 380px;\n  color: #fff;\n  font-family: sans-serif;\n}'},
+      {l:'Text + button',c:'.glass h2 { font-size: 1.6rem; margin-bottom: 12px; }\n.glass p { font-size: .9rem; line-height: 1.6; opacity: .8; margin-bottom: 24px; }\n.gbtn {\n  background: rgba(255,255,255,.2);\n  border: 1px solid rgba(255,255,255,.3);\n  color: #fff; padding: 10px 24px; border-radius: 8px;\n  cursor: pointer; font-size: .9rem; transition: background .2s;\n}\n.gbtn:hover { background: rgba(255,255,255,.35); }'},
+    ]},
 
-<main>
-  <h2>Welcome to the page</h2>
-  <p>The nav bar sits above this content.</p>
-</main>`,
-    css: `* { box-sizing: border-box; margin: 0; padding: 0; }
-
-nav {
-  /* flexbox, space-between, background */
-}
-
-.logo {
-  /* large, bold, colored */
-}
-
-.nav-links {
-  /* flex row, no list style */
-}
-
-.nav-links a {
-  /* padding, hover transition */
-}
-
-.nav-links a:hover { }
-
-main {
-  padding: 40px;
-  font-family: sans-serif;
-}`,
-    hints: [
-      { label: 'Base nav styles', code: `nav {\n  display: flex;\n  align-items: center;\n  justify-content: space-between;\n  background: #1a1a2e;\n  padding: 0 24px;\n  height: 60px;\n}` },
-      { label: 'Logo style', code: `.logo {\n  font-size: 1.3rem;\n  font-weight: 800;\n  color: #89b4fa;\n  text-decoration: none;\n  letter-spacing: -0.5px;\n}` },
-      { label: 'Nav links list', code: `.nav-links {\n  display: flex;\n  list-style: none;\n  gap: 4px;\n}\n.nav-links a {\n  color: #cdd6f4;\n  text-decoration: none;\n  padding: 8px 14px;\n  border-radius: 6px;\n  font-family: sans-serif;\n  font-size: .9rem;\n  transition: background .2s, color .2s;\n}` },
-      { label: 'Hover effect', code: `.nav-links a:hover {\n  background: #313244;\n  color: #89b4fa;\n}` },
-    ]
-  },
-
-  'card-hover': {
-    title: 'Card with Hover Effect',
-    difficulty: 'medium',
-    description: `
-      <span class="badge badge-medium">Medium</span>
-      <h4>🎯 Goal</h4>
-      <p>Style a product card that lifts and shows a shadow on hover.</p>
-      <h4>Requirements</h4>
-      <ul>
-        <li>Rounded card with white background</li>
-        <li>Image area (use a placeholder background color)</li>
-        <li>On hover: card lifts (<code>translateY</code>), shadow deepens</li>
-        <li>Smooth <code>transition</code> on all changes</li>
-      </ul>
-    `,
-    html: `<div class="cards-row">
-  <div class="card">
-    <div class="card-img"></div>
-    <div class="card-body">
-      <h3>Product Name</h3>
-      <p>A short description of this awesome product.</p>
-      <button class="card-btn">Buy Now</button>
-    </div>
-  </div>
-  <div class="card">
-    <div class="card-img" style="background:#cba6f7;"></div>
-    <div class="card-body">
-      <h3>Another Product</h3>
-      <p>This one is even more awesome than the last.</p>
-      <button class="card-btn">Buy Now</button>
-    </div>
-  </div>
-</div>`,
-    css: `body {
-  background: #f0f0f5;
-  font-family: sans-serif;
-  padding: 40px;
-}
-
-.cards-row {
-  display: flex;
-  gap: 24px;
-  flex-wrap: wrap;
-}
-
-.card {
-  /* width, background, radius, shadow, transition */
-}
-
-.card:hover {
-  /* lift + deeper shadow */
-}
-
-.card-img {
-  /* height, background color */
-  background: #89b4fa;
-}
-
-.card-body { /* padding */ }
-.card-body h3 { /* margin */ }
-.card-body p  { /* color, size */ }
-
-.card-btn {
-  /* styled button */
-}`,
-    hints: [
-      { label: 'Base card styles', code: `.card {\n  width: 240px;\n  background: #fff;\n  border-radius: 14px;\n  overflow: hidden;\n  box-shadow: 0 2px 12px rgba(0,0,0,.08);\n  transition: transform .25s, box-shadow .25s;\n}` },
-      { label: 'Hover lift effect', code: `.card:hover {\n  transform: translateY(-6px);\n  box-shadow: 0 12px 32px rgba(0,0,0,.15);\n}` },
-      { label: 'Card image area', code: `.card-img {\n  height: 160px;\n  background: #89b4fa;\n}` },
-      { label: 'Card body & button', code: `.card-body {\n  padding: 16px;\n}\n.card-body h3 {\n  margin-bottom: 8px;\n  font-size: 1.05rem;\n}\n.card-body p {\n  font-size: .85rem;\n  color: #666;\n  margin-bottom: 14px;\n  line-height: 1.5;\n}\n.card-btn {\n  background: #6c63ff;\n  color: #fff;\n  border: none;\n  padding: 8px 18px;\n  border-radius: 6px;\n  cursor: pointer;\n  font-size: .85rem;\n  font-weight: 600;\n  transition: background .2s;\n}\n.card-btn:hover {\n  background: #5a52d5;\n}` },
-    ]
-  },
-
-  'grid-layout': {
-    title: 'CSS Grid Layout',
-    difficulty: 'medium',
-    description: `
-      <span class="badge badge-medium">Medium</span>
-      <h4>🎯 Goal</h4>
-      <p>Build a classic page layout using <strong>CSS Grid</strong> with header, sidebar, main content, and footer.</p>
-      <h4>Requirements</h4>
-      <ul>
-        <li>Grid with named template areas</li>
-        <li>Sidebar: 220px wide, main: remaining space</li>
-        <li>Header and footer span full width</li>
-        <li>Visible borders/backgrounds to distinguish areas</li>
-      </ul>
-    `,
-    html: `<div class="layout">
-  <header>Header</header>
-  <aside>Sidebar</aside>
-  <main>Main Content</main>
-  <footer>Footer</footer>
-</div>`,
-    css: `* { box-sizing: border-box; margin: 0; padding: 0; }
-
-.layout {
-  /* grid, template-areas, min-height: 100vh */
-}
-
-header { grid-area: header; }
-aside  { grid-area: sidebar; }
-main   { grid-area: main; }
-footer { grid-area: footer; }
-
-/* Add colors + padding below */
-header { background: #1a1a2e; color: #fff; }
-aside  { background: #252540; color: #ccc; }
-main   { background: #f8f8ff; }
-footer { background: #1a1a2e; color: #888; }`,
-    hints: [
-      { label: 'Grid container setup', code: `.layout {\n  display: grid;\n  min-height: 100vh;\n  grid-template-columns: 220px 1fr;\n  grid-template-rows: 60px 1fr 50px;\n}` },
-      { label: 'Template areas', code: `.layout {\n  grid-template-areas:\n    "header header"\n    "sidebar main"\n    "footer footer";\n}` },
-      { label: 'Add padding to regions', code: `header, footer, aside, main {\n  padding: 20px 24px;\n  font-family: sans-serif;\n  font-size: .95rem;\n}` },
-      { label: 'Font colors', code: `main {\n  color: #333;\n}\naside {\n  font-size: .85rem;\n  line-height: 1.8;\n}` },
-    ]
-  },
-
-  'animated-button': {
-    title: 'Animated Button',
-    difficulty: 'hard',
-    description: `
-      <span class="badge badge-hard">Hard</span>
-      <h4>🎯 Goal</h4>
-      <p>Create a button with a smooth ripple/fill animation on hover using only CSS.</p>
-      <h4>Requirements</h4>
-      <ul>
-        <li>Button fills with color from left to right on hover</li>
-        <li>Uses <code>::before</code> pseudo-element + <code>transform: scaleX()</code></li>
-        <li>Text color changes mid-animation using <code>transition</code></li>
-        <li><code>overflow: hidden</code> on button to clip the fill</li>
-      </ul>
-    `,
-    html: `<div class="btn-showcase">
-  <button class="fancy-btn">Hover Me</button>
-  <button class="fancy-btn fancy-btn--outline">Outline Fill</button>
-</div>`,
-    css: `body {
-  background: #1a1a2e;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  height: 100vh;
-}
-
-.btn-showcase {
-  display: flex;
-  gap: 20px;
-}
-
-.fancy-btn {
-  /* base: padding, border, font, cursor, overflow:hidden, position:relative */
-}
-
-.fancy-btn::before {
-  /* pseudo fill layer */
-}
-
-.fancy-btn:hover::before {
-  /* expand fill */
-}
-
-.fancy-btn--outline {
-  /* variation */
-}`,
-    hints: [
-      { label: 'Base button', code: `.fancy-btn {\n  padding: 12px 32px;\n  font-size: 1rem;\n  font-family: sans-serif;\n  font-weight: 700;\n  border: 2px solid #89b4fa;\n  background: transparent;\n  color: #89b4fa;\n  cursor: pointer;\n  border-radius: 4px;\n  position: relative;\n  overflow: hidden;\n  transition: color .3s;\n  letter-spacing: .5px;\n}` },
-      { label: 'Pseudo-element fill', code: `.fancy-btn::before {\n  content: '';\n  position: absolute;\n  inset: 0;\n  background: #89b4fa;\n  transform: scaleX(0);\n  transform-origin: left;\n  transition: transform .3s ease;\n  z-index: 0;\n}` },
-      { label: 'Hover expand fill', code: `.fancy-btn:hover::before {\n  transform: scaleX(1);\n}\n.fancy-btn:hover {\n  color: #1a1a2e;\n}` },
-      { label: 'Fix z-index on text', code: `/* Wrap button text in a span or set: */\n.fancy-btn span {\n  position: relative;\n  z-index: 1;\n}\n/* Or add to fancy-btn:\n   z-index on the ::before only */` },
-    ]
-  },
-
-  'glassmorphism': {
-    title: 'Glassmorphism Card',
-    difficulty: 'hard',
-    description: `
-      <span class="badge badge-hard">Hard</span>
-      <h4>🎯 Goal</h4>
-      <p>Create a frosted-glass card over a colorful gradient background.</p>
-      <h4>Requirements</h4>
-      <ul>
-        <li>Gradient background on the page</li>
-        <li>Card uses <code>backdrop-filter: blur()</code></li>
-        <li>Semi-transparent white background: <code>rgba(255,255,255,0.1)</code></li>
-        <li>Subtle white border: <code>rgba(255,255,255,0.2)</code></li>
-        <li>Colored blobs behind card for maximum effect</li>
-      </ul>
-    `,
-    html: `<div class="scene">
-  <div class="blob blob-1"></div>
-  <div class="blob blob-2"></div>
-  <div class="glass-card">
-    <h2>Glass Card</h2>
-    <p>This card uses backdrop-filter to create
-    a frosted glass effect over the background.</p>
-    <button class="glass-btn">Learn More</button>
-  </div>
-</div>`,
-    css: `* { box-sizing: border-box; margin: 0; padding: 0; }
-
-.scene {
-  /* full viewport, dark gradient bg, centered flex */
-}
-
-.blob {
-  /* absolute positioned colored circles for depth */
-  position: absolute;
-  border-radius: 50%;
-  filter: blur(60px);
-  opacity: .6;
-}
-
-.blob-1 { }
-.blob-2 { }
-
-.glass-card {
-  /* the glass effect */
-  position: relative;
-  z-index: 1;
-}
-
-.glass-btn { }`,
-    hints: [
-      { label: 'Scene background', code: `.scene {\n  width: 100vw;\n  height: 100vh;\n  background: linear-gradient(135deg, #0f0c29, #302b63, #24243e);\n  display: flex;\n  align-items: center;\n  justify-content: center;\n  overflow: hidden;\n  position: relative;\n}` },
-      { label: 'Colored blobs', code: `.blob-1 {\n  width: 300px; height: 300px;\n  background: #cba6f7;\n  top: -80px; left: -80px;\n}\n.blob-2 {\n  width: 250px; height: 250px;\n  background: #89b4fa;\n  bottom: -60px; right: -60px;\n}` },
-      { label: 'Glass card base', code: `.glass-card {\n  background: rgba(255,255,255,.1);\n  backdrop-filter: blur(20px);\n  -webkit-backdrop-filter: blur(20px);\n  border: 1px solid rgba(255,255,255,.2);\n  border-radius: 20px;\n  padding: 40px 36px;\n  max-width: 380px;\n  color: #fff;\n  font-family: sans-serif;\n}` },
-      { label: 'Card contents + button', code: `.glass-card h2 {\n  font-size: 1.6rem;\n  margin-bottom: 12px;\n  letter-spacing: -.5px;\n}\n.glass-card p {\n  font-size: .9rem;\n  line-height: 1.6;\n  opacity: .8;\n  margin-bottom: 24px;\n}\n.glass-btn {\n  background: rgba(255,255,255,.2);\n  border: 1px solid rgba(255,255,255,.3);\n  color: #fff;\n  padding: 10px 24px;\n  border-radius: 8px;\n  cursor: pointer;\n  font-size: .9rem;\n  transition: background .2s;\n}\n.glass-btn:hover {\n  background: rgba(255,255,255,.35);\n}` },
-    ]
-  },
-
-  'responsive-nav': {
-    title: 'Responsive Nav',
-    difficulty: 'hard',
-    description: `
-      <span class="badge badge-hard">Hard</span>
-      <h4>🎯 Goal</h4>
-      <p>Build a nav bar that collapses into a hamburger menu on small screens using only CSS.</p>
-      <h4>Requirements</h4>
-      <ul>
-        <li>Desktop: horizontal links, no hamburger icon</li>
-        <li>Mobile (&lt;600px): links hidden, hamburger icon visible</li>
-        <li>Uses CSS <code>:checked</code> hack on hidden checkbox to toggle menu</li>
-        <li>Menu slides down when hamburger is clicked</li>
-        <li>No JavaScript</li>
-      </ul>
-    `,
-    html: `<nav class="top-nav">
-  <a class="brand" href="#">Logo</a>
-
-  <!-- CSS-only toggle -->
-  <input type="checkbox" id="nav-toggle" class="nav-checkbox" />
-  <label for="nav-toggle" class="nav-hamburger">
-    <span></span><span></span><span></span>
-  </label>
-
-  <ul class="nav-menu">
-    <li><a href="#">Home</a></li>
-    <li><a href="#">Portfolio</a></li>
-    <li><a href="#">Blog</a></li>
-    <li><a href="#">Contact</a></li>
-  </ul>
-</nav>
-<div style="padding:40px;font-family:sans-serif;color:#333;">
-  <h2>Page Content</h2>
-  <p>Resize the preview pane narrow to trigger mobile mode.</p>
-</div>`,
-    css: `* { box-sizing: border-box; margin: 0; padding: 0; }
-
-.top-nav {
-  /* flex, background, padding, position:relative */
-}
-
-.brand { }
-.nav-checkbox { display: none; }
-.nav-hamburger { display: none; }
-.nav-hamburger span { }
-
-.nav-menu { }
-.nav-menu a { }
-.nav-menu a:hover { }
-
-/* Mobile */
-@media (max-width: 600px) {
-  .nav-hamburger { display: flex; }
-  .nav-menu { /* hidden by default on mobile */ }
-  .nav-checkbox:checked ~ .nav-menu { /* show */ }
-}`,
-    hints: [
-      { label: 'Base nav', code: `.top-nav {\n  display: flex;\n  align-items: center;\n  justify-content: space-between;\n  background: #1a1a2e;\n  padding: 0 20px;\n  height: 56px;\n  position: relative;\n  flex-wrap: wrap;\n}\n.brand {\n  color: #89b4fa;\n  font-weight: 800;\n  font-size: 1.2rem;\n  text-decoration: none;\n  font-family: sans-serif;\n}` },
-      { label: 'Desktop menu links', code: `.nav-menu {\n  display: flex;\n  list-style: none;\n  gap: 4px;\n}\n.nav-menu a {\n  color: #cdd6f4;\n  text-decoration: none;\n  padding: 8px 14px;\n  border-radius: 6px;\n  font-family: sans-serif;\n  font-size: .88rem;\n  transition: background .2s;\n}\n.nav-menu a:hover { background: #313244; }` },
-      { label: 'Hamburger icon', code: `.nav-hamburger {\n  display: none;\n  flex-direction: column;\n  gap: 5px;\n  cursor: pointer;\n  padding: 5px;\n}\n.nav-hamburger span {\n  width: 24px; height: 2px;\n  background: #cdd6f4;\n  border-radius: 2px;\n  display: block;\n  transition: transform .25s;\n}` },
-      { label: 'Mobile toggle (CSS hack)', code: `@media (max-width: 600px) {\n  .nav-hamburger { display: flex; }\n  .nav-menu {\n    display: none;\n    width: 100%;\n    flex-direction: column;\n    background: #252540;\n    padding: 8px 0;\n  }\n  .nav-menu li a {\n    display: block;\n    padding: 12px 20px;\n  }\n  .nav-checkbox:checked ~ .nav-menu {\n    display: flex;\n  }\n}` },
-    ]
-  },
+  'resp-nav':{title:'Responsive Nav',diff:'hard',
+    desc:'<span class="badge hard">Hard</span><h4>Goal</h4><p>Nav that collapses into a hamburger on small screens — CSS only.</p><ul><li>Desktop: horizontal links</li><li>Mobile: hamburger toggles menu via <code>:checked</code></li><li>No JavaScript</li></ul>',
+    html:'<nav class="topnav">\n  <a class="brand" href="#">Logo</a>\n  <input type="checkbox" id="nt" class="ntoggle"/>\n  <label for="nt" class="nham"><span></span><span></span><span></span></label>\n  <ul class="nmenu">\n    <li><a href="#">Home</a></li>\n    <li><a href="#">Portfolio</a></li>\n    <li><a href="#">Blog</a></li>\n    <li><a href="#">Contact</a></li>\n  </ul>\n</nav>\n<div style="padding:40px;font-family:sans-serif"><h2>Page Content</h2></div>',
+    css:'* { box-sizing: border-box; margin: 0; padding: 0; }\n.topnav { /* flex, space-between, dark bg */ }\n.brand { }\n.ntoggle { display: none; }\n.nham { display: none; }\n.nham span { }\n.nmenu { }\n.nmenu a { }\n@media (max-width: 600px) {\n  .nham { display: flex; }\n  .nmenu { /* hidden by default */ }\n  .ntoggle:checked ~ .nmenu { /* show */ }\n}',
+    hints:[
+      {l:'Nav base',c:'.topnav {\n  display: flex;\n  align-items: center;\n  justify-content: space-between;\n  background: #1a1a2e;\n  padding: 0 20px;\n  height: 56px;\n  position: relative;\n  flex-wrap: wrap;\n}\n.brand { color: #89b4fa; font-weight: 800; font-size: 1.2rem; text-decoration: none; font-family: sans-serif; }'},
+      {l:'Desktop links',c:'.nmenu {\n  display: flex;\n  list-style: none;\n  gap: 4px;\n}\n.nmenu a {\n  color: #cdd6f4;\n  text-decoration: none;\n  padding: 8px 14px;\n  border-radius: 6px;\n  font-family: sans-serif;\n  font-size: .88rem;\n  transition: background .2s;\n}\n.nmenu a:hover { background: #313244; }'},
+      {l:'Hamburger',c:'.nham {\n  display: none;\n  flex-direction: column;\n  gap: 5px;\n  cursor: pointer;\n  padding: 5px;\n}\n.nham span {\n  width: 24px; height: 2px;\n  background: #cdd6f4;\n  border-radius: 2px;\n  display: block;\n}'},
+      {l:'Mobile toggle',c:'@media (max-width: 600px) {\n  .nham { display: flex; }\n  .nmenu {\n    display: none;\n    width: 100%;\n    flex-direction: column;\n    background: #252540;\n    padding: 8px 0;\n  }\n  .nmenu li a { display: block; padding: 12px 20px; }\n  .ntoggle:checked ~ .nmenu { display: flex; }\n}'},
+    ]},
 };
 
-// ─── Autocomplete Data ───────────────────────────────────────────────────────
-const AC = {
-  cssProps: [
-    'align-content','align-items','align-self','animation','animation-delay',
-    'animation-direction','animation-duration','animation-fill-mode',
-    'animation-iteration-count','animation-name','animation-play-state',
-    'animation-timing-function','appearance','backdrop-filter','background',
-    'background-attachment','background-blend-mode','background-clip',
-    'background-color','background-image','background-origin','background-position',
-    'background-repeat','background-size','border','border-bottom','border-bottom-color',
-    'border-bottom-left-radius','border-bottom-right-radius','border-bottom-style',
-    'border-bottom-width','border-collapse','border-color','border-left',
-    'border-left-color','border-left-style','border-left-width','border-radius',
-    'border-right','border-right-color','border-right-style','border-right-width',
-    'border-style','border-top','border-top-color','border-top-left-radius',
-    'border-top-right-radius','border-top-style','border-top-width','border-width',
-    'bottom','box-shadow','box-sizing','clear','clip-path','color','column-count',
-    'column-gap','column-rule','columns','content','cursor','direction','display',
-    'filter','flex','flex-basis','flex-direction','flex-flow','flex-grow',
-    'flex-shrink','flex-wrap','float','font','font-family','font-size','font-style',
-    'font-variant','font-weight','gap','grid','grid-area','grid-auto-columns',
-    'grid-auto-flow','grid-auto-rows','grid-column','grid-column-end',
-    'grid-column-start','grid-row','grid-row-end','grid-row-start','grid-template',
-    'grid-template-areas','grid-template-columns','grid-template-rows','height',
-    'inset','isolation','justify-content','justify-items','justify-self','left',
-    'letter-spacing','line-height','list-style','list-style-position',
-    'list-style-type','margin','margin-bottom','margin-left','margin-right',
-    'margin-top','max-height','max-width','min-height','min-width','mix-blend-mode',
-    'object-fit','object-position','opacity','order','outline','outline-color',
-    'outline-offset','outline-style','outline-width','overflow','overflow-x',
-    'overflow-y','padding','padding-bottom','padding-left','padding-right',
-    'padding-top','place-content','place-items','place-self','pointer-events',
-    'position','resize','right','rotate','row-gap','scale','scroll-behavior',
-    'table-layout','text-align','text-decoration','text-decoration-color',
-    'text-decoration-line','text-decoration-style','text-indent','text-overflow',
-    'text-shadow','text-transform','top','transform','transform-origin',
-    'transform-style','transition','transition-delay','transition-duration',
-    'transition-property','transition-timing-function','translate','user-select',
-    'vertical-align','visibility','white-space','width','will-change','word-break',
-    'word-spacing','writing-mode','z-index',
-  ],
-  cssValues: {
-    'display':['block','inline','inline-block','flex','inline-flex','grid','inline-grid','none','table','table-cell','table-row','contents','flow-root','list-item'],
-    'position':['static','relative','absolute','fixed','sticky'],
-    'flex-direction':['row','row-reverse','column','column-reverse'],
-    'flex-wrap':['nowrap','wrap','wrap-reverse'],
-    'justify-content':['flex-start','flex-end','center','space-between','space-around','space-evenly','start','end','stretch'],
-    'align-items':['flex-start','flex-end','center','baseline','stretch','start','end'],
-    'align-content':['flex-start','flex-end','center','space-between','space-around','space-evenly','stretch'],
-    'align-self':['auto','flex-start','flex-end','center','baseline','stretch'],
-    'overflow':['visible','hidden','scroll','auto','clip'],
-    'overflow-x':['visible','hidden','scroll','auto'],
-    'overflow-y':['visible','hidden','scroll','auto'],
-    'cursor':['default','pointer','text','move','not-allowed','grab','grabbing','none','crosshair','help','wait','progress','zoom-in','zoom-out','e-resize','w-resize','n-resize','s-resize','col-resize','row-resize'],
-    'visibility':['visible','hidden','collapse'],
-    'font-weight':['normal','bold','bolder','lighter','100','200','300','400','500','600','700','800','900'],
-    'font-style':['normal','italic','oblique'],
-    'text-align':['left','right','center','justify','start','end'],
-    'text-transform':['none','uppercase','lowercase','capitalize','full-width'],
-    'text-decoration':['none','underline','overline','line-through'],
-    'text-overflow':['clip','ellipsis'],
-    'white-space':['normal','nowrap','pre','pre-wrap','pre-line','break-spaces'],
-    'word-break':['normal','break-all','keep-all','break-word'],
-    'box-sizing':['content-box','border-box'],
-    'float':['left','right','none','inline-start','inline-end'],
-    'clear':['none','left','right','both'],
-    'vertical-align':['baseline','top','middle','bottom','text-top','text-bottom','sub','super'],
-    'background-repeat':['repeat','no-repeat','repeat-x','repeat-y','round','space'],
-    'background-size':['auto','cover','contain'],
-    'background-attachment':['scroll','fixed','local'],
-    'border-style':['none','solid','dashed','dotted','double','groove','ridge','inset','outset','hidden'],
-    'outline-style':['none','solid','dashed','dotted','double','groove','ridge','inset','outset'],
-    'object-fit':['fill','contain','cover','none','scale-down'],
-    'pointer-events':['auto','none'],
-    'resize':['none','both','horizontal','vertical'],
-    'user-select':['auto','text','none','all','contain'],
-    'list-style-type':['none','disc','circle','square','decimal','lower-alpha','upper-alpha','lower-roman','upper-roman'],
-    'will-change':['auto','scroll-position','contents','transform','opacity'],
-    'mix-blend-mode':['normal','multiply','screen','overlay','darken','lighten','color-dodge','color-burn','hard-light','soft-light','difference','exclusion','hue','saturation','color','luminosity'],
-    'isolation':['auto','isolate'],
-    'transform':['none','translateX()','translateY()','translate()','scaleX()','scaleY()','scale()','rotate()','rotateX()','rotateY()','skewX()','skewY()','matrix()','perspective()'],
-    'transition-timing-function':['ease','linear','ease-in','ease-out','ease-in-out','step-start','step-end','cubic-bezier()'],
-    'animation-timing-function':['ease','linear','ease-in','ease-out','ease-in-out','step-start','step-end'],
-    'animation-fill-mode':['none','forwards','backwards','both'],
-    'animation-direction':['normal','reverse','alternate','alternate-reverse'],
-    'animation-play-state':['running','paused'],
-    'appearance':['none','auto'],
-    'scroll-behavior':['auto','smooth'],
-    'writing-mode':['horizontal-tb','vertical-rl','vertical-lr'],
-    'grid-auto-flow':['row','column','dense','row dense','column dense'],
-    'table-layout':['auto','fixed'],
-    'border-collapse':['collapse','separate'],
-    'caption-side':['top','bottom'],
-    'empty-cells':['show','hide'],
-  },
-  cssFunctions: [
-    'rgb()','rgba()','hsl()','hsla()','hwb()','oklch()','lch()',
-    'linear-gradient()','radial-gradient()','conic-gradient()',
-    'repeating-linear-gradient()','repeating-radial-gradient()',
-    'url()','calc()','var()','clamp()','min()','max()','env()',
-    'translateX()','translateY()','translate()','translate3d()',
-    'rotate()','rotateX()','rotateY()','rotateZ()','rotate3d()',
-    'scale()','scaleX()','scaleY()','scale3d()',
-    'skewX()','skewY()','skew()','matrix()','matrix3d()','perspective()',
-    'blur()','brightness()','contrast()','drop-shadow()','grayscale()',
-    'hue-rotate()','invert()','opacity()','saturate()','sepia()',
-    'polygon()','circle()','ellipse()','inset()','path()',
-    'counter()','counters()','attr()','format()','local()',
-  ],
-  cssPseudos: [
-    ':hover',':focus',':focus-within',':focus-visible',':active',
-    ':visited',':link',':any-link',':local-link',
-    ':first-child',':last-child',':only-child',
-    ':first-of-type',':last-of-type',':only-of-type',
-    ':nth-child()',':nth-last-child()',':nth-of-type()',':nth-last-of-type()',
-    ':checked',':indeterminate',':disabled',':enabled',':read-only',':read-write',
-    ':required',':optional',':valid',':invalid',':in-range',':out-of-range',
-    ':empty',':root',':target',':not()',':is()',':where()',':has()',
-    '::before','::after','::placeholder','::selection','::first-line','::first-letter',
-    '::marker','::backdrop','::file-selector-button',
-  ],
-  cssAtRules: [
-    '@media','@keyframes','@import','@font-face','@supports','@charset',
-    '@layer','@container','@property','@counter-style',
-  ],
-  htmlTags: [
-    'a','abbr','address','article','aside','audio','b','blockquote','body',
-    'br','button','canvas','caption','cite','code','col','colgroup','data',
-    'datalist','dd','del','details','dfn','dialog','div','dl','dt','em',
-    'embed','fieldset','figcaption','figure','footer','form',
-    'h1','h2','h3','h4','h5','h6','head','header','hr','html',
-    'i','iframe','img','input','ins','kbd','label','legend','li','link',
-    'main','map','mark','menu','meta','meter','nav','noscript',
-    'object','ol','optgroup','option','output','p','picture','pre',
-    'progress','q','s','samp','script','section','select','small',
-    'source','span','strong','style','sub','summary','sup','svg',
-    'table','tbody','td','template','textarea','tfoot','th','thead',
-    'time','title','tr','track','u','ul','var','video','wbr',
-  ],
-  htmlAttrs: {
-    _global: ['class','id','style','title','lang','dir','tabindex','hidden',
-      'role','data-','aria-label','aria-hidden','aria-disabled','aria-expanded',
-      'aria-controls','aria-selected','aria-required','aria-live',
-      'contenteditable','draggable','spellcheck','translate','accesskey'],
-    a:        ['href','target','rel','download','type','hreflang'],
-    img:      ['src','alt','width','height','loading','decoding','srcset','sizes'],
-    input:    ['type','name','value','placeholder','required','disabled','readonly',
-                'checked','min','max','step','pattern','autocomplete','autofocus',
-                'multiple','form','list','accept','capture','inputmode'],
-    button:   ['type','name','value','disabled','form','formaction','formmethod'],
-    form:     ['action','method','enctype','target','novalidate','autocomplete'],
-    label:    ['for'],
-    select:   ['name','multiple','required','disabled','size','form'],
-    textarea: ['name','rows','cols','placeholder','required','disabled','readonly',
-                'maxlength','minlength','wrap','form','spellcheck'],
-    video:    ['src','autoplay','controls','loop','muted','poster','width','height','preload','crossorigin'],
-    audio:    ['src','autoplay','controls','loop','muted','preload','crossorigin'],
-    iframe:   ['src','width','height','frameborder','allowfullscreen','sandbox','title','loading','referrerpolicy'],
-    meta:     ['name','content','charset','http-equiv','property'],
-    link:     ['rel','href','type','media','crossorigin','integrity','as'],
-    script:   ['src','type','async','defer','crossorigin','integrity','nomodule'],
-    td:       ['colspan','rowspan','headers'],
-    th:       ['colspan','rowspan','scope','headers'],
-    source:   ['src','srcset','type','media','sizes'],
-    track:    ['src','kind','label','srclang','default'],
-    col:      ['span'],
-    colgroup: ['span'],
-    area:     ['href','alt','shape','coords','target','rel','download'],
-    map:      ['name'],
-    details:  ['open'],
-    dialog:   ['open'],
-    object:   ['data','type','width','height','name','form'],
-    progress: ['value','max'],
-    meter:    ['value','min','max','low','high','optimum','form'],
-    time:     ['datetime'],
-    data:     ['value'],
-    ins:      ['cite','datetime'],
-    del:      ['cite','datetime'],
-    blockquote: ['cite'],
-    q:        ['cite'],
-  },
-  htmlInputTypes: ['text','email','password','number','tel','url','search','date',
-    'datetime-local','time','month','week','color','range','file','checkbox',
-    'radio','submit','reset','button','image','hidden'],
-};
+/* ── AC Data ────────────────────────────────────────────────────────── */
+var AC_PROPS = ['align-content','align-items','align-self','animation','animation-delay','animation-direction','animation-duration','animation-fill-mode','animation-iteration-count','animation-name','animation-play-state','animation-timing-function','appearance','backdrop-filter','background','background-attachment','background-blend-mode','background-clip','background-color','background-image','background-origin','background-position','background-repeat','background-size','border','border-bottom','border-bottom-color','border-bottom-left-radius','border-bottom-right-radius','border-bottom-style','border-bottom-width','border-collapse','border-color','border-left','border-left-color','border-left-style','border-left-width','border-radius','border-right','border-right-color','border-right-style','border-right-width','border-style','border-top','border-top-color','border-top-left-radius','border-top-right-radius','border-top-style','border-top-width','border-width','bottom','box-shadow','box-sizing','clear','clip-path','color','column-count','column-gap','column-rule','columns','content','cursor','direction','display','filter','flex','flex-basis','flex-direction','flex-flow','flex-grow','flex-shrink','flex-wrap','float','font','font-family','font-size','font-style','font-variant','font-weight','gap','grid','grid-area','grid-auto-columns','grid-auto-flow','grid-auto-rows','grid-column','grid-column-end','grid-column-start','grid-row','grid-row-end','grid-row-start','grid-template','grid-template-areas','grid-template-columns','grid-template-rows','height','inset','isolation','justify-content','justify-items','justify-self','left','letter-spacing','line-height','list-style','list-style-position','list-style-type','margin','margin-bottom','margin-left','margin-right','margin-top','max-height','max-width','min-height','min-width','mix-blend-mode','object-fit','object-position','opacity','order','outline','outline-color','outline-offset','outline-style','outline-width','overflow','overflow-x','overflow-y','padding','padding-bottom','padding-left','padding-right','padding-top','place-content','place-items','place-self','pointer-events','position','resize','right','row-gap','scroll-behavior','table-layout','text-align','text-decoration','text-decoration-color','text-decoration-line','text-decoration-style','text-indent','text-overflow','text-shadow','text-transform','top','transform','transform-origin','transform-style','transition','transition-delay','transition-duration','transition-property','transition-timing-function','user-select','vertical-align','visibility','white-space','width','will-change','word-break','word-spacing','z-index'];
 
-// ─── Custom Autocomplete Engine ───────────────────────────────────────────────
-const acPopup = document.getElementById('ac-popup');
-const acList  = document.getElementById('ac-list');
-let acState = null; // { cm, items, from, to, sel }
+var AC_VALUES = {display:['block','inline','inline-block','flex','inline-flex','grid','inline-grid','none','table','table-cell','contents','flow-root'],position:['static','relative','absolute','fixed','sticky'],'flex-direction':['row','row-reverse','column','column-reverse'],'flex-wrap':['nowrap','wrap','wrap-reverse'],'justify-content':['flex-start','flex-end','center','space-between','space-around','space-evenly','start','end','stretch'],'align-items':['flex-start','flex-end','center','baseline','stretch','start','end'],'align-content':['flex-start','flex-end','center','space-between','space-around','space-evenly','stretch'],'align-self':['auto','flex-start','flex-end','center','baseline','stretch'],overflow:['visible','hidden','scroll','auto','clip'],'overflow-x':['visible','hidden','scroll','auto'],'overflow-y':['visible','hidden','scroll','auto'],cursor:['default','pointer','text','move','not-allowed','grab','grabbing','none','crosshair','help','wait','progress','zoom-in','zoom-out','col-resize','row-resize'],visibility:['visible','hidden','collapse'],'font-weight':['normal','bold','bolder','lighter','100','200','300','400','500','600','700','800','900'],'font-style':['normal','italic','oblique'],'text-align':['left','right','center','justify'],'text-transform':['none','uppercase','lowercase','capitalize'],'text-decoration':['none','underline','overline','line-through'],'text-overflow':['clip','ellipsis'],'white-space':['normal','nowrap','pre','pre-wrap','pre-line'],'word-break':['normal','break-all','keep-all','break-word'],'box-sizing':['content-box','border-box'],float:['left','right','none'],clear:['none','left','right','both'],'vertical-align':['baseline','top','middle','bottom','text-top','text-bottom','sub','super'],'background-repeat':['repeat','no-repeat','repeat-x','repeat-y','round','space'],'background-size':['auto','cover','contain'],'background-attachment':['scroll','fixed','local'],'border-style':['none','solid','dashed','dotted','double','groove','ridge','inset','outset','hidden'],'outline-style':['none','solid','dashed','dotted','double'],'object-fit':['fill','contain','cover','none','scale-down'],'pointer-events':['auto','none'],resize:['none','both','horizontal','vertical'],'user-select':['auto','text','none','all'],'list-style-type':['none','disc','circle','square','decimal','lower-alpha','upper-alpha','lower-roman','upper-roman'],'will-change':['auto','scroll-position','contents','transform','opacity'],'mix-blend-mode':['normal','multiply','screen','overlay','darken','lighten','color-dodge','color-burn','hard-light','soft-light','difference','exclusion'],isolation:['auto','isolate'],transform:['none','translateX()','translateY()','translate()','scaleX()','scaleY()','scale()','rotate()','rotateX()','rotateY()','skewX()','skewY()','matrix()','perspective()'],'transition-timing-function':['ease','linear','ease-in','ease-out','ease-in-out','step-start','step-end'],'animation-timing-function':['ease','linear','ease-in','ease-out','ease-in-out'],'animation-fill-mode':['none','forwards','backwards','both'],'animation-direction':['normal','reverse','alternate','alternate-reverse'],'animation-play-state':['running','paused'],appearance:['none','auto'],'scroll-behavior':['auto','smooth'],'grid-auto-flow':['row','column','dense','row dense','column dense'],'table-layout':['auto','fixed'],'border-collapse':['collapse','separate']};
+
+var AC_FUNCS = ['rgb()','rgba()','hsl()','hsla()','linear-gradient()','radial-gradient()','conic-gradient()','url()','calc()','var()','clamp()','min()','max()','env()','blur()','brightness()','contrast()','drop-shadow()','grayscale()','hue-rotate()','invert()','opacity()','saturate()','sepia()','polygon()','circle()','ellipse()','inset()','translateX()','translateY()','translate()','rotate()','scale()','skewX()','skewY()','matrix()','perspective()','counter()','attr()'];
+
+var AC_PSEUDOS = [':hover',':focus',':focus-within',':focus-visible',':active',':visited',':link',':first-child',':last-child',':only-child',':first-of-type',':last-of-type',':only-of-type',':nth-child()',':nth-last-child()',':nth-of-type()',':nth-last-of-type()',':checked',':disabled',':enabled',':read-only',':required',':optional',':valid',':invalid',':empty',':root',':target',':not()',':is()',':where()',':has()','::before','::after','::placeholder','::selection','::first-line','::first-letter','::marker','::backdrop'];
+
+var AC_AT = ['@media','@keyframes','@import','@font-face','@supports','@charset','@layer','@container','@property'];
+
+var AC_TAGS = ['a','abbr','address','article','aside','audio','b','blockquote','body','br','button','canvas','caption','cite','code','col','colgroup','data','datalist','dd','del','details','dfn','dialog','div','dl','dt','em','embed','fieldset','figcaption','figure','footer','form','h1','h2','h3','h4','h5','h6','head','header','hr','html','i','iframe','img','input','ins','kbd','label','legend','li','link','main','map','mark','menu','meta','meter','nav','noscript','object','ol','optgroup','option','output','p','picture','pre','progress','q','s','samp','script','section','select','small','source','span','strong','style','sub','summary','sup','svg','table','tbody','td','template','textarea','tfoot','th','thead','time','title','tr','track','u','ul','var','video','wbr'];
+
+var AC_ATTRS = {_g:['class','id','style','title','lang','dir','tabindex','hidden','role','data-','aria-label','aria-hidden','aria-disabled','aria-expanded','contenteditable','draggable','spellcheck'],a:['href','target','rel','download','type','hreflang'],img:['src','alt','width','height','loading','decoding','srcset','sizes'],input:['type','name','value','placeholder','required','disabled','readonly','checked','min','max','step','pattern','autocomplete','autofocus','multiple','form','list','accept','inputmode'],button:['type','name','value','disabled','form','formaction'],form:['action','method','enctype','target','novalidate','autocomplete'],label:['for'],select:['name','multiple','required','disabled','size','form'],textarea:['name','rows','cols','placeholder','required','disabled','readonly','maxlength','wrap','form'],video:['src','autoplay','controls','loop','muted','poster','width','height','preload'],audio:['src','autoplay','controls','loop','muted','preload'],iframe:['src','width','height','frameborder','allowfullscreen','sandbox','title','loading'],meta:['name','content','charset','http-equiv','property'],link:['rel','href','type','media','crossorigin','as'],script:['src','type','async','defer','crossorigin','nomodule'],td:['colspan','rowspan'],th:['colspan','rowspan','scope'],source:['src','srcset','type','media'],details:['open'],dialog:['open'],progress:['value','max'],meter:['value','min','max','low','high','optimum']};
+
+var AC_INPUT_TYPES = ['text','email','password','number','tel','url','search','date','datetime-local','time','month','week','color','range','file','checkbox','radio','submit','reset','button','image','hidden'];
+
+/* ── AC Engine ───────────────────────────────────────────────────────── */
+var acPop   = document.getElementById('acPop');
+var acInner = document.getElementById('acInner');
+var acSt    = null;
+var acTimer = null;
 
 function acClose() {
-  acPopup.style.display = 'none';
-  acState = null;
+  acPop.style.display = 'none';
+  acSt = null;
+}
+
+function esc(s) {
+  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
 }
 
 function acRender() {
-  if (!acState) return;
-  const { items, sel } = acState;
-  acList.innerHTML = '';
-  const limit = Math.min(items.length, 12);
-  for (let i = 0; i < limit; i++) {
-    const { text, type } = items[i];
-    const el = document.createElement('div');
-    el.className = 'ac-item' + (i === sel ? ' ac-active' : '');
-    el.innerHTML = `<em class="ac-type ac-type-${type}">${type}</em>${escapeAC(text)}`;
-    el.addEventListener('mousedown', e => { e.preventDefault(); acApply(i); });
-    el.addEventListener('mouseover',  () => { acState.sel = i; acRender(); });
-    acList.appendChild(el);
+  if (!acSt) return;
+  acInner.innerHTML = '';
+  var limit = Math.min(acSt.items.length, 12);
+  for (var i = 0; i < limit; i++) {
+    (function(idx) {
+      var item = acSt.items[idx];
+      var el = document.createElement('div');
+      el.className = 'aci' + (idx === acSt.sel ? ' sel' : '');
+      el.innerHTML = '<em class="actype t-' + item.k + '">' + item.k + '</em>' + esc(item.t);
+      el.addEventListener('mousedown', function(e) { e.preventDefault(); acApply(idx); });
+      el.addEventListener('mouseover',  function()  { acSt.sel = idx; acRender(); });
+      acInner.appendChild(el);
+    })(i);
   }
-  // Scroll selected into view
-  const active = acList.querySelector('.ac-active');
-  if (active) active.scrollIntoView({ block: 'nearest' });
-}
-
-function escapeAC(s) {
-  return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  var sel = acInner.querySelector('.sel');
+  if (sel) sel.scrollIntoView({block:'nearest'});
 }
 
 function acApply(idx) {
-  if (!acState) return;
-  const { cm, items, from, to } = acState;
-  const idx2 = idx !== undefined ? idx : acState.sel;
-  if (idx2 < 0 || idx2 >= items.length) { acClose(); return; }
-  const text = items[idx2].text;
-  cm.replaceRange(text, from, to);
-  // For function completions, place cursor between the parens
-  if (text.endsWith('()')) {
-    const cur = cm.getCursor();
-    cm.setCursor({ line: cur.line, ch: cur.ch - 1 });
-  }
+  if (!acSt) return;
+  var i = (idx !== undefined) ? idx : acSt.sel;
+  if (i < 0 || i >= acSt.items.length) { acClose(); return; }
+  var text = acSt.items[i].t;
+  var cm   = acSt.cm;
+  var from = acSt.from;
+  var to   = acSt.to;
   acClose();
+  cm.replaceRange(text, from, to);
+  if (text.slice(-2) === '()') {
+    var c = cm.getCursor();
+    cm.setCursor({line: c.line, ch: c.ch - 1});
+  }
   cm.focus();
 }
 
-function acMove(dir) {
-  if (!acState) return;
-  const max = Math.min(acState.items.length, 12);
-  acState.sel = (acState.sel + dir + max) % max;
+function acMove(d) {
+  if (!acSt) return;
+  var max = Math.min(acSt.items.length, 12);
+  acSt.sel = (acSt.sel + d + max) % max;
   acRender();
 }
 
 function acShow(cm, items, from, to) {
   if (!items.length) { acClose(); return; }
-  acState = { cm, items, from, to, sel: 0 };
+  acSt = {cm: cm, items: items, from: from, to: to, sel: 0};
   acRender();
-  // Position near cursor
-  const coords = cm.charCoords(from, 'page');
-  const ww = window.innerWidth, wh = window.innerHeight;
-  acPopup.style.display = 'block';
-  const pw = acPopup.offsetWidth, ph = acPopup.offsetHeight;
-  let left = coords.left;
-  let top  = coords.bottom + 2;
-  if (left + pw > ww - 8) left = ww - pw - 8;
-  if (top + ph  > wh - 8) top  = coords.top - ph - 2;
-  acPopup.style.left = left + 'px';
-  acPopup.style.top  = top  + 'px';
+  var coords = cm.charCoords(from, 'page');
+  acPop.style.display = 'block';
+  var pw = acPop.offsetWidth, ph = acPop.offsetHeight;
+  var ww = window.innerWidth,  wh = window.innerHeight;
+  var left = Math.min(coords.left, ww - pw - 6);
+  var top  = coords.bottom + 2;
+  if (top + ph > wh - 6) top = coords.top - ph - 2;
+  acPop.style.left = left + 'px';
+  acPop.style.top  = top  + 'px';
 }
 
-// ─── Context-aware completion logic ──────────────────────────────────────────
-
-function getCSSCompletions(cm) {
-  const cursor = cm.getCursor();
-  const line   = cm.getLine(cursor.line);
-  const before = line.slice(0, cursor.ch);
-
-  // Inside a CSS comment — skip
-  if (/\/\*/.test(before) && !/\*\//.test(before.split('/*').pop())) return null;
-
-  // After a ':' → value context
-  const valueMatch = before.match(/^\s*([\w-]+)\s*:\s*([\w%-]*(?:\s[\w%-]*)?)$/);
-  if (valueMatch) {
-    const prop   = valueMatch[1].toLowerCase();
-    const vRaw   = valueMatch[2];
-    const parts  = vRaw.split(/\s+/);
-    const prefix = parts[parts.length - 1];
-    const from   = { line: cursor.line, ch: cursor.ch - prefix.length };
-    const pool   = AC.cssValues[prop] || AC.cssValues[prop.replace(/^-(webkit|moz|ms)-/, '')] || [];
-    // Merge with general keywords
-    const all    = [...new Set([...pool, 'inherit','initial','unset','revert','auto'])];
-    const fns    = AC.cssFunctions;
-    const items  = [
-      ...all.filter(v => v.startsWith(prefix)).map(v => ({ text: v, type: 'value' })),
-      ...fns.filter(f => f.startsWith(prefix)).map(f => ({ text: f, type: 'fn' })),
-    ];
-    return items.length ? { items, from, to: cursor } : null;
+/* keyboard nav — capture phase fires before CodeMirror */
+document.addEventListener('keydown', function(e) {
+  if (!acSt) return;
+  var k = e.key;
+  if (k === 'ArrowDown' || k === 'ArrowUp' || k === 'Enter' || k === 'Tab' || k === 'Escape') {
+    e.preventDefault();
+    e.stopPropagation();
+    if      (k === 'ArrowDown') acMove(1);
+    else if (k === 'ArrowUp')   acMove(-1);
+    else if (k === 'Escape')    acClose();
+    else                        acApply();
   }
+}, true);
 
-  // After '(' inside a value (function args) — offer colors and keywords
-  if (/:\s*[\w-]+\([^)]*$/.test(before)) return null;
-
-  // At-rule
-  const atMatch = before.match(/@([\w-]*)$/);
-  if (atMatch) {
-    const prefix = '@' + atMatch[1];
-    const items  = AC.cssAtRules
-      .filter(a => a.startsWith(prefix))
-      .map(a => ({ text: a, type: 'prop' }));
-    return items.length ? { items, from: { line: cursor.line, ch: cursor.ch - prefix.length }, to: cursor } : null;
-  }
-
-  // Pseudo-class / pseudo-element
-  const pseudoMatch = before.match(/:{1,2}([\w-]*)$/);
-  if (pseudoMatch) {
-    const pfx    = before.endsWith('::') ? '::' : before.endsWith(':') ? ':' : ':';
-    const typed  = pseudoMatch[1];
-    const full   = pfx + typed;
-    const from   = { line: cursor.line, ch: cursor.ch - full.length };
-    const items  = AC.cssPseudos
-      .filter(p => p.startsWith(pfx + typed))
-      .map(p => ({ text: p, type: 'pseudo' }));
-    return items.length ? { items, from, to: cursor } : null;
-  }
-
-  // CSS property name (general token)
-  const propMatch = before.match(/(?:^|\{|\s)([\w-]*)$/);
-  if (propMatch) {
-    const prefix = propMatch[1];
-    if (!prefix) return null;
-    const from   = { line: cursor.line, ch: cursor.ch - prefix.length };
-    const items  = AC.cssProps
-      .filter(p => p.startsWith(prefix))
-      .map(p => ({ text: p + ': ', type: 'prop' }));
-    return items.length ? { items, from, to: cursor } : null;
-  }
-
-  return null;
-}
-
-function getHTMLCompletions(cm) {
-  const cursor = cm.getCursor();
-  const line   = cm.getLine(cursor.line);
-  const before = line.slice(0, cursor.ch);
-
-  // Inside a string attribute value (e.g. type="|")
-  const typeValMatch = before.match(/\btype=["']?([\w-]*)$/);
-  if (typeValMatch) {
-    const prefix = typeValMatch[1];
-    const from   = { line: cursor.line, ch: cursor.ch - prefix.length };
-    const items  = AC.htmlInputTypes
-      .filter(t => t.startsWith(prefix))
-      .map(t => ({ text: t, type: 'value' }));
-    return items.length ? { items, from, to: cursor } : null;
-  }
-
-  // Opening tag: <tag or inside a tag for attributes
-  // Detect current open tag context
-  const tagCtx = before.match(/<([\w-]+)([^>]*)$/);
-  if (tagCtx) {
-    const tagName = tagCtx[1].toLowerCase();
-    // Attribute name context (after whitespace inside a tag)
-    const attrMatch = before.match(/\s([\w-]*)$/);
-    if (attrMatch) {
-      const prefix = attrMatch[1];
-      const from   = { line: cursor.line, ch: cursor.ch - prefix.length };
-      const specific = AC.htmlAttrs[tagName] || [];
-      const global   = AC.htmlAttrs._global;
-      const all      = [...new Set([...specific, ...global])];
-      const items    = all
-        .filter(a => a.startsWith(prefix))
-        .map(a => ({ text: a, type: 'attr' }));
-      return items.length ? { items, from, to: cursor } : null;
-    }
-  }
-
-  // Tag name: < or </
-  const tagMatch = before.match(/<\/?([a-zA-Z][\w-]*)$/);
-  if (tagMatch) {
-    const prefix  = tagMatch[1];
-    const isClose = before.match(/<\//);
-    const from    = { line: cursor.line, ch: cursor.ch - prefix.length };
-    const items   = AC.htmlTags
-      .filter(t => t.startsWith(prefix.toLowerCase()))
-      .map(t => ({ text: t, type: 'tag' }));
-    return items.length ? { items, from, to: cursor } : null;
-  }
-
-  // Just typed '<'
-  if (before.endsWith('<') || before.endsWith('</')) {
-    const from = { line: cursor.line, ch: cursor.ch };
-    const items = AC.htmlTags.map(t => ({ text: t, type: 'tag' }));
-    return { items, from, to: cursor };
-  }
-
-  return null;
-}
-
-// ─── Keyboard navigation for popup (capture phase — fires before CodeMirror) ─
-document.addEventListener('keydown', e => {
-  if (!acState) return;
-  if      (e.key === 'ArrowDown') { e.preventDefault(); e.stopPropagation(); acMove(1);    }
-  else if (e.key === 'ArrowUp')   { e.preventDefault(); e.stopPropagation(); acMove(-1);   }
-  else if (e.key === 'Enter')     { e.preventDefault(); e.stopPropagation(); acApply();    }
-  else if (e.key === 'Tab')       { e.preventDefault(); e.stopPropagation(); acApply();    }
-  else if (e.key === 'Escape')    { e.preventDefault(); e.stopPropagation(); acClose();    }
-}, true); // true = capture phase
-
-// Close popup on outside click
-document.addEventListener('mousedown', e => {
-  if (acState && !acPopup.contains(e.target)) acClose();
+document.addEventListener('mousedown', function(e) {
+  if (acSt && !acPop.contains(e.target)) acClose();
 });
 
-// ─── CodeMirror Editors ──────────────────────────────────────────────────────
-const sharedKeys = {
+/* ── CSS completions ──────────────────────────────────────────────────────── */
+function cssComplete(cm) {
+  var cur  = cm.getCursor();
+  var line = cm.getLine(cur.line);
+  var pre  = line.slice(0, cur.ch);
+
+  // at-rule
+  var atM = pre.match(/@([\w-]*)$/);
+  if (atM) {
+    var p = '@' + atM[1];
+    var from = {line: cur.line, ch: cur.ch - p.length};
+    var items = AC_AT.filter(function(a){return a.indexOf(p)===0;}).map(function(a){return {t:a,k:'prop'};});
+    return items.length ? {items:items,from:from,to:cur} : null;
+  }
+
+  // pseudo
+  var psM = pre.match(/:{1,2}([\w-]*)$/);
+  if (psM && /[a-zA-Z\]#.*)]/.test(pre[pre.length - psM[0].length - 1] || '')) {
+    var colon = pre.slice(pre.length - psM[0].length, pre.length - psM[1].length);
+    var typed = psM[1];
+    var full  = colon + typed;
+    var from  = {line: cur.line, ch: cur.ch - full.length};
+    var items = AC_PSEUDOS.filter(function(p){return p.indexOf(colon+typed)===0;}).map(function(p){return {t:p,k:'pseudo'};});
+    return items.length ? {items:items,from:from,to:cur} : null;
+  }
+
+  // value (after property: )
+  var valM = pre.match(/^\s*([\w-]+)\s*:\s*([\w%-]*)$/);
+  if (valM) {
+    var prop   = valM[1].toLowerCase();
+    var prefix = valM[2];
+    var from   = {line: cur.line, ch: cur.ch - prefix.length};
+    var pool   = AC_VALUES[prop] || AC_VALUES[prop.replace(/^-(webkit|moz|ms)-/,'')] || [];
+    var gen    = ['inherit','initial','unset','revert','auto','none'];
+    var all    = pool.concat(gen.filter(function(g){return pool.indexOf(g)===-1;}));
+    var items  = all.filter(function(v){return v.indexOf(prefix)===0;}).map(function(v){return {t:v,k:'val'};}
+      ).concat(AC_FUNCS.filter(function(f){return f.indexOf(prefix)===0;}).map(function(f){return {t:f,k:'fn'};}));
+    return items.length ? {items:items,from:from,to:cur} : null;
+  }
+
+  // skip if we're inside a value expression
+  if (/:\s*\S/.test(pre)) return null;
+
+  // property name
+  var propM = pre.match(/(?:^|\{|;)\s*([\w-]+)$/);
+  if (propM && propM[1]) {
+    var prefix = propM[1];
+    var from   = {line: cur.line, ch: cur.ch - prefix.length};
+    var items  = AC_PROPS.filter(function(p){return p.indexOf(prefix)===0;}).map(function(p){return {t:p+': ',k:'prop'};});
+    return items.length ? {items:items,from:from,to:cur} : null;
+  }
+
+  return null;
+}
+
+/* ── HTML completions ─────────────────────────────────────────────────────── */
+function htmlComplete(cm) {
+  var cur  = cm.getCursor();
+  var line = cm.getLine(cur.line);
+  var pre  = line.slice(0, cur.ch);
+
+  // input type value
+  var typeM = pre.match(/\btype=["']?([\w-]*)$/);
+  if (typeM) {
+    var prefix = typeM[1];
+    var from   = {line: cur.line, ch: cur.ch - prefix.length};
+    var items  = AC_INPUT_TYPES.filter(function(t){return t.indexOf(prefix)===0;}).map(function(t){return {t:t,k:'val'};});
+    return items.length ? {items:items,from:from,to:cur} : null;
+  }
+
+  // attribute inside a tag
+  var tagCtx = pre.match(/<([\w-]+)(?:\s+[^>]*)?\s([\w-]*)$/);
+  if (tagCtx) {
+    var tagName = tagCtx[1].toLowerCase();
+    var prefix  = tagCtx[2];
+    var from    = {line: cur.line, ch: cur.ch - prefix.length};
+    var specific = AC_ATTRS[tagName] || [];
+    var all      = specific.concat(AC_ATTRS._g.filter(function(a){return specific.indexOf(a)===-1;}));
+    var items    = all.filter(function(a){return a.indexOf(prefix)===0;}).map(function(a){return {t:a,k:'attr'};});
+    return items.length ? {items:items,from:from,to:cur} : null;
+  }
+
+  // tag name
+  var tagM = pre.match(/<\/?([a-zA-Z][\w-]*)$/);
+  if (tagM) {
+    var prefix = tagM[1];
+    var from   = {line: cur.line, ch: cur.ch - prefix.length};
+    var items  = AC_TAGS.filter(function(t){return t.indexOf(prefix.toLowerCase())===0;}).map(function(t){return {t:t,k:'tag'};});
+    return items.length ? {items:items,from:from,to:cur} : null;
+  }
+
+  return null;
+}
+
+function triggerAC(cm, force) {
+  clearTimeout(acTimer);
+  acTimer = setTimeout(function() {
+    try {
+      var mode = cm.getModeAt(cm.getCursor()).name;
+      var res  = (mode === 'css') ? cssComplete(cm) : htmlComplete(cm);
+      if (res) acShow(cm, res.items, res.from, res.to);
+      else if (!force) acClose();
+    } catch(e) { /* ignore */ }
+  }, force ? 0 : 220);
+}
+
+/* ── CodeMirror editors ─────────────────────────────────────────────────────── */
+var KEYS = {
   'Ctrl-/':     'toggleComment',
   'Cmd-/':      'toggleComment',
-  'Ctrl-Space': cm => { triggerAC(cm, true); },
+  'Ctrl-Space': function(cm) { triggerAC(cm, true); },
 };
 
-const htmlEditor = CodeMirror.fromTextArea(document.getElementById('htmlEditor'), {
-  mode: 'htmlmixed',
-  theme: 'dracula',
-  lineNumbers: true,
-  autoCloseBrackets: true,
-  matchBrackets: true,
-  styleActiveLine: true,
-  lineWrapping: true,
-  tabSize: 2,
-  indentWithTabs: false,
-  extraKeys: sharedKeys,
+var htmlEd = CodeMirror.fromTextArea(document.getElementById('htmlEd'), {
+  mode:'htmlmixed', theme:'dracula', lineNumbers:true,
+  autoCloseBrackets:true, matchBrackets:true, styleActiveLine:true,
+  lineWrapping:true, tabSize:2, indentWithTabs:false, extraKeys:KEYS,
 });
 
-const cssEditor = CodeMirror.fromTextArea(document.getElementById('cssEditor'), {
-  mode: 'css',
-  theme: 'dracula',
-  lineNumbers: true,
-  autoCloseBrackets: true,
-  matchBrackets: true,
-  styleActiveLine: true,
-  lineWrapping: true,
-  tabSize: 2,
-  indentWithTabs: false,
-  extraKeys: sharedKeys,
+var cssEd = CodeMirror.fromTextArea(document.getElementById('cssEd'), {
+  mode:'css', theme:'dracula', lineNumbers:true,
+  autoCloseBrackets:true, matchBrackets:true, styleActiveLine:true,
+  lineWrapping:true, tabSize:2, indentWithTabs:false, extraKeys:KEYS,
 });
 
-// ─── Auto-trigger on every keypress ──────────────────────────────────────────
-let acDebounce = null;
-
-function triggerAC(cm, force = false) {
-  clearTimeout(acDebounce);
-  acDebounce = setTimeout(() => {
-    const mode = cm.getMode().name;
-    let result = null;
-    if (mode === 'css') result = getCSSCompletions(cm);
-    else                result = getHTMLCompletions(cm);
-    if (result) {
-      acShow(cm, result.items, result.from, result.to);
-    } else if (!force) {
-      acClose();
-    }
-  }, force ? 0 : 200);
-}
-
-htmlEditor.on('change', (cm, ch) => {
+htmlEd.on('change', function(cm, ch) {
   if (ch.origin === '+delete' || ch.origin === 'undo' || ch.origin === 'redo') { acClose(); return; }
   triggerAC(cm);
 });
-cssEditor.on('change', (cm, ch) => {
+cssEd.on('change', function(cm, ch) {
   if (ch.origin === '+delete' || ch.origin === 'undo' || ch.origin === 'redo') { acClose(); return; }
   triggerAC(cm);
 });
 
-// Re-evaluate suggestions when cursor moves (e.g. after applying a completion)
-htmlEditor.on('cursorActivity', () => { if (acState) triggerAC(htmlEditor); });
-cssEditor.on( 'cursorActivity', () => { if (acState) triggerAC(cssEditor); });
+function refresh() { htmlEd.refresh(); cssEd.refresh(); }
+setTimeout(refresh, 50); setTimeout(refresh, 200); setTimeout(refresh, 600);
+window.addEventListener('resize', refresh);
+window.addEventListener('orientationchange', function(){ setTimeout(refresh, 300); });
 
-// Fix CodeMirror size after init
-function refreshEditors() {
-  htmlEditor.refresh();
-  cssEditor.refresh();
-}
-setTimeout(refreshEditors, 50);
-window.addEventListener('resize', refreshEditors);
-
-// ─── Preview Engine ──────────────────────────────────────────────────────────
-const frame = document.getElementById('previewFrame');
-const statusDot = document.getElementById('statusDot');
-let debounceTimer = null;
+/* ── Preview ───────────────────────────────────────────────────────────── */
+var frame  = document.getElementById('prevFrame');
+var dot    = document.getElementById('dot');
+var runTmr = null;
 
 function buildDoc(html, css) {
-  return `<!DOCTYPE html>
-<html>
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
-<style>
-  *,*::before,*::after{box-sizing:border-box;}
-  body{margin:0;}
-${css}
-</style>
-</head>
-<body>
-${html}
-</body>
-</html>`;
+  return '<!DOCTYPE html><html><head><meta charset="UTF-8">'
+    + '<meta name="viewport" content="width=device-width,initial-scale=1">'
+    + '<style>*,*::before,*::after{box-sizing:border-box}body{margin:0}\n'
+    + css + '\n</style></head><body>' + html + '</body></html>';
 }
 
 function runPreview() {
-  const html = htmlEditor.getValue();
-  const css  = cssEditor.getValue();
-  const doc  = buildDoc(html, css);
-
-  statusDot.style.background = 'var(--warn)';
+  var html = htmlEd.getValue();
+  var css  = cssEd.getValue();
+  dot.style.background = 'var(--yellow)';
   try {
-    const blob = new Blob([doc], { type: 'text/html' });
-    const url  = URL.createObjectURL(blob);
-    const old  = frame.src;
-    frame.src  = url;
-    if (old && old.startsWith('blob:')) URL.revokeObjectURL(old);
-    statusDot.style.background = 'var(--accent3)';
-  } catch (e) {
-    statusDot.style.background = 'var(--error)';
+    var blob = new Blob([buildDoc(html, css)], {type:'text/html'});
+    var url  = URL.createObjectURL(blob);
+    var old  = frame.src;
+    frame.src = url;
+    if (old && old.slice(0,5) === 'blob:') URL.revokeObjectURL(old);
+    dot.style.background = 'var(--green)';
+  } catch(e) {
+    dot.style.background = 'var(--red)';
   }
-
-  validateCSS(css);
+  lintCSS(css);
 }
 
 function scheduleRun() {
-  clearTimeout(debounceTimer);
-  debounceTimer = setTimeout(runPreview, 600);
+  clearTimeout(runTmr);
+  runTmr = setTimeout(runPreview, 650);
 }
+htmlEd.on('change', scheduleRun);
+cssEd.on( 'change', scheduleRun);
 
-htmlEditor.on('change', scheduleRun);
-cssEditor.on('change',  scheduleRun);
+/* ── CSS Lint ──────────────────────────────────────────────────────────── */
+var errBadge = document.getElementById('errBadge');
+var errPanel = document.getElementById('errPanel');
+var errList  = document.getElementById('errList');
 
-// ─── CSS Validation ──────────────────────────────────────────────────────────
-const errorBadge  = document.getElementById('errorBadge');
-const errorPanel  = document.getElementById('errorPanel');
-const errorList   = document.getElementById('errorList');
-
-function validateCSS(css) {
-  if (!css.trim() || typeof CSSLint === 'undefined') { clearErrors(); return; }
+function lintCSS(css) {
+  if (!css.trim() || typeof CSSLint === 'undefined') { clearErr(); return; }
   try {
-    const result = CSSLint.verify(css, {
-      'known-properties': true,
-      'duplicate-properties': true,
-      'empty-rules': false,
-      'important': false,
-    });
-    const messages = result.messages.filter(m => m.type === 'error' || m.type === 'warning');
-    if (messages.length > 0) {
-      errorBadge.textContent = `⚠ ${messages.length} CSS issue${messages.length > 1 ? 's' : ''}`;
-      errorBadge.classList.add('visible');
-      errorList.innerHTML = messages.slice(0, 8).map(m => `
-        <div class="error-item">
-          <span class="err-type ${m.type === 'error' ? 'err-error' : 'err-warning'}">${m.type.toUpperCase()}</span>
-          Line ${m.line}: ${m.message}
-        </div>`).join('');
-      errorPanel.classList.add('visible');
-    } else {
-      clearErrors();
-    }
-  } catch (_) { clearErrors(); }
+    var res  = CSSLint.verify(css, {'known-properties':true,'duplicate-properties':true});
+    var msgs = res.messages.filter(function(m){ return m.type === 'error' || m.type === 'warning'; });
+    if (msgs.length) {
+      errBadge.textContent = '⚠ ' + msgs.length + ' issue' + (msgs.length > 1 ? 's' : '');
+      errBadge.classList.add('on');
+      errList.innerHTML = msgs.slice(0,8).map(function(m){
+        return '<div class="ei"><span class="etag ' + (m.type==='error'?'eterr':'etwarn') + '">'
+          + m.type.toUpperCase() + '</span>Line ' + m.line + ': ' + m.message + '</div>';
+      }).join('');
+      errPanel.classList.add('on');
+    } else { clearErr(); }
+  } catch(e) { clearErr(); }
 }
+function clearErr() { errBadge.classList.remove('on'); errPanel.classList.remove('on'); }
+document.getElementById('errClose').addEventListener('click', function(){ errPanel.classList.remove('on'); });
 
-function clearErrors() {
-  errorBadge.classList.remove('visible');
-  errorPanel.classList.remove('visible');
-  errorList.innerHTML = '';
-}
-
-document.getElementById('closeErrors').addEventListener('click', () => {
-  errorPanel.classList.remove('visible');
-});
-
-// ─── Tabs ────────────────────────────────────────────────────────────────────
-document.querySelectorAll('.tab-btn').forEach(btn => {
-  btn.addEventListener('click', () => {
-    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
-    document.querySelectorAll('.editor-wrap').forEach(w => w.classList.remove('active'));
-    btn.classList.add('active');
-    document.getElementById('wrap-' + btn.dataset.tab).classList.add('active');
-    setTimeout(() => { htmlEditor.refresh(); cssEditor.refresh(); }, 10);
+/* ── Tabs ────────────────────────────────────────────────────────────── */
+document.querySelectorAll('.tab').forEach(function(btn) {
+  btn.addEventListener('click', function() {
+    document.querySelectorAll('.tab').forEach(function(b){ b.classList.remove('on'); });
+    document.querySelectorAll('.ewrap').forEach(function(w){ w.classList.remove('on'); });
+    btn.classList.add('on');
+    document.getElementById('w-' + btn.dataset.tab).classList.add('on');
+    setTimeout(refresh, 10);
   });
 });
 
-// ─── Challenge System ────────────────────────────────────────────────────────
-const challengePanel  = document.getElementById('challengePanel');
-const challengeTitle  = document.getElementById('challengeTitle');
-const challengeDesc   = document.getElementById('challengeDesc');
-const hintList        = document.getElementById('hintList');
-const challengeSelect = document.getElementById('challengeSelect');
+/* ── Challenges ────────────────────────────────────────────────────────── */
+var chalPanel = document.getElementById('chalPanel');
+var chalTitle = document.getElementById('chalTitle');
+var chalDesc  = document.getElementById('chalDesc');
+var hintList  = document.getElementById('hintList');
+var chalSel   = document.getElementById('csel');
 
-function loadChallenge(key, injectCode = false) {
-  const ch = CHALLENGES[key];
+function escH(s){ return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+
+function loadChallenge(key, inject) {
+  var ch = CH[key];
   if (!ch) return;
-
-  challengeTitle.textContent = ch.title;
-  challengeDesc.innerHTML = ch.description;
-
-  hintList.innerHTML = '';
-  ch.hints.forEach((h, i) => {
-    const item = document.createElement('div');
-    item.className = 'hint-item';
-    item.innerHTML = `
-      <div class="hint-step">
-        <span class="step-num">${i + 1}</span>
-        ${h.label}
-      </div>
-      <pre class="hint-code">${escapeHTML(h.code)}</pre>
-      <button class="hint-apply-btn" data-hint="${i}">Apply ↗</button>`;
-
-    item.querySelector('.hint-step').addEventListener('click', () => {
-      item.classList.toggle('open');
-    });
-    item.querySelector('.hint-apply-btn').addEventListener('click', () => {
-      const current = cssEditor.getValue();
-      cssEditor.setValue(current + '\n' + h.code);
-      // switch to CSS tab
+  chalTitle.textContent = ch.title;
+  chalDesc.innerHTML    = ch.desc;
+  hintList.innerHTML    = '';
+  ch.hints.forEach(function(h, i) {
+    var item = document.createElement('div');
+    item.className = 'hi';
+    item.innerHTML = '<div class="histep"><span class="hinum">' + (i+1) + '</span>' + escH(h.l) + '</div>'
+      + '<pre class="hicode">' + escH(h.c) + '</pre>'
+      + '<button class="hiapply">Apply ↗</button>';
+    item.querySelector('.histep').addEventListener('click', function(){ item.classList.toggle('open'); });
+    item.querySelector('.hiapply').addEventListener('click', function(){
+      cssEd.setValue(cssEd.getValue() + '\n' + h.c);
       document.querySelector('[data-tab="css"]').click();
     });
     hintList.appendChild(item);
   });
-
-  if (injectCode) {
-    htmlEditor.setValue(ch.html);
-    cssEditor.setValue(ch.css);
+  if (inject) {
+    htmlEd.setValue(ch.html);
+    cssEd.setValue(ch.css);
     runPreview();
   }
 }
 
-function escapeHTML(str) {
-  return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
-}
-
-challengeSelect.addEventListener('change', () => {
-  loadChallenge(challengeSelect.value, false);
-  if (!challengePanel.classList.contains('hidden')) {
-    // already open, just update desc
-  }
-});
-
-document.getElementById('loadChallengeBtn').addEventListener('click', () => {
-  loadChallenge(challengeSelect.value, true);
-});
-
-// ─── Buttons ─────────────────────────────────────────────────────────────────
+chalSel.addEventListener('change', function(){ loadChallenge(chalSel.value, false); });
+document.getElementById('loadBtn').addEventListener('click', function(){ loadChallenge(chalSel.value, true); });
 document.getElementById('runBtn').addEventListener('click', runPreview);
+document.getElementById('resetBtn').addEventListener('click', function(){ loadChallenge(chalSel.value, true); });
 
-document.getElementById('resetBtn').addEventListener('click', () => {
-  loadChallenge(challengeSelect.value, true);
+document.getElementById('chalBtn').addEventListener('click', function() {
+  var btn = document.getElementById('chalBtn');
+  var on  = chalPanel.classList.toggle('on');
+  document.getElementById('vres').classList.toggle('show', on);
+  btn.classList.toggle('on', on);
+  if (on) loadChallenge(chalSel.value, false);
+  setTimeout(refresh, 300);
 });
 
-document.getElementById('challengeToggleBtn').addEventListener('click', () => {
-  const btn = document.getElementById('challengeToggleBtn');
-  challengePanel.classList.toggle('hidden');
-  btn.classList.toggle('active');
-  if (!challengePanel.classList.contains('hidden')) {
-    loadChallenge(challengeSelect.value, false);
-  }
-  setTimeout(refreshEditors, 300);
+document.getElementById('hintBtn').addEventListener('click', function() {
+  chalPanel.classList.add('on');
+  document.getElementById('vres').classList.add('show');
+  document.getElementById('chalBtn').classList.add('on');
+  loadChallenge(chalSel.value, false);
+  setTimeout(function(){ hintList.scrollIntoView({behavior:'smooth',block:'nearest'}); refresh(); }, 100);
 });
 
-document.getElementById('hintBtn').addEventListener('click', () => {
-  // Open challenge panel and scroll to hints
-  challengePanel.classList.remove('hidden');
-  document.getElementById('challengeToggleBtn').classList.add('active');
-  loadChallenge(challengeSelect.value, false);
-  setTimeout(() => {
-    hintList.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-    refreshEditors();
-  }, 100);
-});
-
-// ─── Horizontal Pane Resizer ─────────────────────────────────────────────────
-(function() {
-  const resizer     = document.getElementById('resizer');
-  const editorPane  = document.getElementById('editorPane');
-  const splitRow    = document.getElementById('splitRow');
-  let dragging = false, startX = 0, startW = 0;
-
-  resizer.addEventListener('mousedown', e => {
-    dragging = true;
-    startX = e.clientX;
-    startW = editorPane.getBoundingClientRect().width;
-    resizer.classList.add('dragging');
-    document.body.style.cursor = 'col-resize';
-    document.body.style.userSelect = 'none';
-  });
-
-  document.addEventListener('mousemove', e => {
-    if (!dragging) return;
-    const delta = e.clientX - startX;
-    const total = splitRow.getBoundingClientRect().width;
-    const newW  = Math.min(Math.max(startW + delta, 200), total - 200);
-    editorPane.style.width = newW + 'px';
-    editorPane.style.flex  = 'none';
-  });
-
-  document.addEventListener('mouseup', () => {
-    if (!dragging) return;
-    dragging = false;
-    resizer.classList.remove('dragging');
-    document.body.style.cursor = '';
-    document.body.style.userSelect = '';
-    refreshEditors();
-  });
-
-  // Touch support
-  resizer.addEventListener('touchstart', e => {
-    dragging = true;
-    startX = e.touches[0].clientX;
-    startW = editorPane.getBoundingClientRect().width;
-  }, { passive: true });
-
-  document.addEventListener('touchmove', e => {
-    if (!dragging) return;
-    const delta = e.touches[0].clientX - startX;
-    const total = splitRow.getBoundingClientRect().width;
-    const newW  = Math.min(Math.max(startW + delta, 200), total - 200);
-    editorPane.style.width = newW + 'px';
-    editorPane.style.flex  = 'none';
-  }, { passive: true });
-
-  document.addEventListener('touchend', () => {
-    dragging = false;
-    refreshEditors();
-  });
+/* ── Resizers ──────────────────────────────────────────────────────────── */
+(function() {  // horizontal
+  var rz = document.getElementById('hres');
+  var ed = document.getElementById('edPane');
+  var row= document.getElementById('split');
+  var drag=false, sx=0, sw=0;
+  rz.addEventListener('mousedown',function(e){drag=true;sx=e.clientX;sw=ed.getBoundingClientRect().width;rz.classList.add('d');document.body.style.cursor='col-resize';document.body.style.userSelect='none';});
+  document.addEventListener('mousemove',function(e){if(!drag)return;var w=Math.min(Math.max(sw+e.clientX-sx,180),row.getBoundingClientRect().width-180);ed.style.width=w+'px';ed.style.flex='none';});
+  document.addEventListener('mouseup',function(){if(!drag)return;drag=false;rz.classList.remove('d');document.body.style.cursor='';document.body.style.userSelect='';refresh();});
 })();
 
-// ─── Vertical (Challenge) Pane Resizer ───────────────────────────────────────
-(function() {
-  const vResizer  = document.getElementById('vResizer');
-  const chPanel   = document.getElementById('challengePanel');
-  const workspace = document.getElementById('workspace');
-  let dragging = false, startY = 0, startH = 0;
-
-  vResizer.addEventListener('mousedown', e => {
-    if (chPanel.classList.contains('hidden')) return;
-    dragging = true;
-    startY = e.clientY;
-    startH = chPanel.getBoundingClientRect().height;
-    vResizer.classList.add('dragging');
-    document.body.style.cursor = 'row-resize';
-    document.body.style.userSelect = 'none';
-  });
-
-  document.addEventListener('mousemove', e => {
-    if (!dragging) return;
-    const delta = startY - e.clientY;
-    const newH  = Math.min(Math.max(startH + delta, 100), 500);
-    chPanel.style.height = newH + 'px';
-  });
-
-  document.addEventListener('mouseup', () => {
-    if (!dragging) return;
-    dragging = false;
-    vResizer.classList.remove('dragging');
-    document.body.style.cursor = '';
-    document.body.style.userSelect = '';
-    refreshEditors();
-  });
+(function() {  // vertical
+  var rz = document.getElementById('vres');
+  var cp = document.getElementById('chalPanel');
+  var drag=false, sy=0, sh=0;
+  rz.addEventListener('mousedown',function(e){if(!chalPanel.classList.contains('on'))return;drag=true;sy=e.clientY;sh=cp.getBoundingClientRect().height;rz.classList.add('d');document.body.style.cursor='row-resize';document.body.style.userSelect='none';});
+  document.addEventListener('mousemove',function(e){if(!drag)return;var h=Math.min(Math.max(sh+sy-e.clientY,80),500);cp.style.height=h+'px';});
+  document.addEventListener('mouseup',function(){if(!drag)return;drag=false;rz.classList.remove('d');document.body.style.cursor='';document.body.style.userSelect='';refresh();});
 })();
 
-// ─── Init ────────────────────────────────────────────────────────────────────
+/* ── Init ────────────────────────────────────────────────────────────── */
 loadChallenge('blank', true);
-
-// Put vResizer BEFORE challengePanel in DOM order (it's between splitRow and challengePanel)
-(function reorderDOM() {
-  const ws = document.getElementById('workspace');
-  const sr = document.getElementById('splitRow');
-  const vr = document.getElementById('vResizer');
-  const cp = document.getElementById('challengePanel');
-  ws.appendChild(sr);
-  ws.appendChild(vr);
-  ws.appendChild(cp);
-})();
-
-// On mobile, CodeMirror needs a refresh after the browser finishes its layout pass
-// (especially after font loading and flex sizing settle)
-if (window.innerWidth <= 700) {
-  [50, 200, 500].forEach(ms => setTimeout(refreshEditors, ms));
-}
-window.addEventListener('orientationchange', () => {
-  setTimeout(refreshEditors, 300);
-});
 </script>
 </body>
 </html>
